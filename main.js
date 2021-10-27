@@ -10,16 +10,18 @@ const B_TO_GB = 1073741824;
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const logStream = new Stream.PassThrough();
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
 	console.log('Ready!');
 	const container = docker.getContainer(process.env.FACTORYCONTAINER);
 
-	const logStream = new Stream.PassThrough();
+	/*const logStream = new Stream.PassThrough();
 
 	logStream.on('data', function (chunk) {
-		console.log(chunk.toString('utf8'));
+		if (chunk.toString('utf8').includes('Bringing up level for play took'))
+			console.log('server up');
 	});
 
 	const stream = await container.logs(
@@ -29,11 +31,8 @@ client.once('ready', async () => {
 			stream.on('end', () => {
 				logStream.end('!stop!');
 			});
-			setTimeout(() => {
-				stream.destroy();
-			}, 2000);
 		}
-	);
+	);*/
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -61,12 +60,33 @@ client.on('interactionCreate', async (interaction) => {
 		await interaction.reply({ embeds: [statsEmbed] });
 	} else if (commandName === 'restart-factory') {
 		// do server checks
-		container.restart(async (err, res) => {
+
+		await container.restart(async (err, res) => {
 			if (res === null) {
 				await interaction.reply(err.reason);
+			} else {
+				await interaction.reply('Restarting Server, please wait...');
+				await container.logs(
+					{ follow: true, stdout: true, tail: 10 },
+					(err, stream) => {
+						container.modem.demuxStream(stream, logStream, logStream);
+						stream.on('end', function () {
+							logStream.end('!stop!');
+						});
+					}
+				);
+				await logStream.on('data', (chunk) => {
+					if (
+						chunk
+							.toString('utf8')
+							.includes('LogGame: World Serialization (load)')
+					) {
+						console.log(chunk.toString('utf8'));
+						interaction.followUp('Server restarted successfully');
+					}
+				});
 			}
 		});
-		await interaction.reply('Restarting server');
 	}
 });
 
