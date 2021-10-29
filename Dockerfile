@@ -1,4 +1,4 @@
-FROM lts-alpine3.14
+FROM node:lts-alpine3.14
 
 WORKDIR /app
 
