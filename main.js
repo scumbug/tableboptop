@@ -1,16 +1,19 @@
-// Require the necessary discord.js classes
+// Include dependencies
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const Docker = require('dockerode');
 const { calculateCPUPercent } = require('./utils');
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-const Stream = require('stream');
 require('dotenv').config();
 
+// initalise constants
 const B_TO_GB = 1073741824;
+const SERVER_UP_NOTIFICATION = 'LogGame: World Serialization (load)';
+
+// Init docker
+const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+const container = docker.getContainer(process.env.FACTORYCONTAINER);
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-const logStream = new Stream.PassThrough();
 
 // When the client is ready, run this code (only once)
 client.once('ready', () => {
@@ -21,7 +24,6 @@ client.on('interactionCreate', async (interaction) => {
 	if (!interaction.isCommand()) return;
 
 	const { commandName } = interaction;
-	const container = docker.getContainer(process.env.FACTORYCONTAINER);
 
 	if (commandName === 'ping') {
 		await interaction.reply('Pong!');
@@ -42,33 +44,22 @@ client.on('interactionCreate', async (interaction) => {
 		await interaction.reply({ embeds: [statsEmbed] });
 	} else if (commandName === 'restart-factory') {
 		// do server checks
-
-		await container.restart(async (err, res) => {
-			if (res === null) {
-				await interaction.reply(err.reason);
-			} else {
-				await interaction.reply('Restarting Server, please wait...');
-				await container.logs(
-					{ follow: true, stdout: true, tail: 10 },
-					(err, stream) => {
-						container.modem.demuxStream(stream, logStream, logStream);
-						stream.on('end', function () {
-							logStream.end('!stop!');
-						});
-					}
-				);
-				await logStream.on('data', (chunk) => {
-					if (
-						chunk
-							.toString('utf8')
-							.includes('LogGame: World Serialization (load)')
-					) {
-						console.log(chunk.toString('utf8'));
-						interaction.followUp('Server restarted successfully');
-					}
-				});
-			}
-		});
+		await interaction.reply('Restarting server, please hodl...');
+		const restartState = await container.restart();
+		console.log(restartState);
+		if (restartState === null) {
+			await interaction.followUp(restartState.reason);
+		} else {
+			const stream = await container.logs({
+				follow: true,
+				stdout: true,
+				tail: 10,
+			});
+			stream.on('data', async (chunk) => {
+				if (chunk.toString('utf8').includes(SERVER_UP_NOTIFICATION))
+					await interaction.followUp('Server restarted successfully');
+			});
+		}
 	}
 });
 
