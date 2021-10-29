@@ -13,26 +13,8 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const logStream = new Stream.PassThrough();
 
 // When the client is ready, run this code (only once)
-client.once('ready', async () => {
+client.once('ready', () => {
 	console.log('Ready!');
-	const container = docker.getContainer(process.env.FACTORYCONTAINER);
-
-	/*const logStream = new Stream.PassThrough();
-
-	logStream.on('data', function (chunk) {
-		if (chunk.toString('utf8').includes('Bringing up level for play took'))
-			console.log('server up');
-	});
-
-	const stream = await container.logs(
-		{ follow: true, stdout: true, tail: 10 },
-		(err, stream) => {
-			container.modem.demuxStream(stream, logStream, logStream);
-			stream.on('end', () => {
-				logStream.end('!stop!');
-			});
-		}
-	);*/
 });
 
 client.on('interactionCreate', async (interaction) => {
