@@ -1,0 +1,33 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup docker build
+        uses: docker/setup-buildx-actions@v1
+        
+      - name: Login Dockerhub
+        uses: docker/login-actions@v1
+      
+      - name: Build images and push to Docker hub
+        uses: docker/build-push-actions@v2
+        with:
+          context: ./
+          tags: scumbug/tableboptop:latest
+          push: ${{ github.ref == 'refs/heads/master' }}
+          
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outpus.digest }}
