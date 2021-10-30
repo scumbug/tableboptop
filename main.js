@@ -1,7 +1,13 @@
 // Include dependencies
-const { Client, Intents, MessageEmbed } = require('discord.js');
+const {
+	Client,
+	Intents,
+	MessageEmbed,
+	MessageAttachment,
+} = require('discord.js');
 const Docker = require('dockerode');
 const { calculateCPUPercent } = require('./utils');
+const fs = require('fs');
 require('dotenv').config();
 
 // initalise constants
@@ -16,7 +22,7 @@ const container = docker.getContainer(process.env.FACTORYCONTAINER);
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => {
+client.once('ready', async () => {
 	console.log('Ready!');
 });
 
@@ -43,11 +49,11 @@ client.on('interactionCreate', async (interaction) => {
 			);
 		await interaction.reply({ embeds: [statsEmbed] });
 	} else if (commandName === 'restart-factory') {
-		await interaction.reply('Restarting server, please hodl...');
+		await interaction.deferReply('Restarting server, please hodl...');
 		try {
 			await container.restart();
 		} catch (error) {
-			await interaction.followUp(`Sumting wong: ${error.reason}`);
+			await interaction.editReply(`Sumting wong: ${error.reason}`);
 			return null;
 		}
 		const stream = await container.logs({
@@ -57,7 +63,21 @@ client.on('interactionCreate', async (interaction) => {
 		});
 		stream.on('data', async (chunk) => {
 			if (chunk.toString('utf8').includes(SERVER_UP_NOTIFICATION))
-				await interaction.followUp('Server restarted successfully');
+				await interaction.editReply('Server restarted successfully');
+		});
+	} else if (commandName === 'grab-save') {
+		// grab latest save file from server
+		await interaction.deferReply('Retrieving save file...');
+		const save = await container.getArchive({ path: process.env.SAVEDIR });
+		const file = fs.createWriteStream('latest-save.tar');
+		save.pipe(file);
+		save.on('end', async () => {
+			console.log('done');
+			const attachSave = new MessageAttachment('latest-save.tar');
+			await interaction.editReply({ files: [attachSave] });
+			fs.unlink('latest-save.tar', (err) => {
+				if (err) throw err;
+			});
 		});
 	}
 });
