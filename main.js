@@ -43,23 +43,22 @@ client.on('interactionCreate', async (interaction) => {
 			);
 		await interaction.reply({ embeds: [statsEmbed] });
 	} else if (commandName === 'restart-factory') {
-		// do server checks
 		await interaction.reply('Restarting server, please hodl...');
-		const restartState = await container.restart();
-		console.log(restartState);
-		if (restartState === null) {
-			await interaction.followUp(restartState.reason);
-		} else {
-			const stream = await container.logs({
-				follow: true,
-				stdout: true,
-				tail: 10,
-			});
-			stream.on('data', async (chunk) => {
-				if (chunk.toString('utf8').includes(SERVER_UP_NOTIFICATION))
-					await interaction.followUp('Server restarted successfully');
-			});
+		try {
+			await container.restart();
+		} catch (error) {
+			await interaction.followUp(`Sumting wong: ${error.reason}`);
+			return null;
 		}
+		const stream = await container.logs({
+			follow: true,
+			stdout: true,
+			tail: 10,
+		});
+		stream.on('data', async (chunk) => {
+			if (chunk.toString('utf8').includes(SERVER_UP_NOTIFICATION))
+				await interaction.followUp('Server restarted successfully');
+		});
 	}
 });
 
