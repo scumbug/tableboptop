@@ -8,6 +8,8 @@ const {
 const Docker = require('dockerode');
 const { calculateCPUPercent } = require('./utils');
 const fs = require('fs');
+const fetch = require('node-fetch');
+const FormData = require('form-data');
 require('dotenv').config();
 
 // initalise constants
@@ -73,8 +75,26 @@ client.on('interactionCreate', async (interaction) => {
 		save.pipe(file);
 		save.on('end', async () => {
 			console.log('done');
-			const attachSave = new MessageAttachment('latest-save.tar');
-			await interaction.editReply({ files: [attachSave] });
+			const server = await (
+				await fetch('https://api.gofile.io/getServer', {
+					method: 'GET',
+				})
+			).json();
+
+			const uploadFile = new FormData();
+			uploadFile.append('file', fs.createReadStream('latest-save.tar'));
+
+			const upload = await (
+				await fetch(`https://${server.data.server}.gofile.io/uploadFile`, {
+					method: 'POST',
+					body: uploadFile,
+				})
+			).json();
+
+			await interaction.editReply(
+				`Download save file @ ${upload.data.downloadPage}`
+			);
+
 			fs.unlink('latest-save.tar', (err) => {
 				if (err) throw err;
 			});
