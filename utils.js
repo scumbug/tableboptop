@@ -1,3 +1,8 @@
+const Docker = require('dockerode');
+
+const docker = new Docker({ host: '192.168.1.32', port: 2375 });
+const container = docker.getContainer(process.env.FACTORYCONTAINER);
+
 const calculateCPUPercent = (stats) => {
 	const cpuDelta =
 		stats.cpu_stats.cpu_usage.total_usage -
@@ -9,4 +14,12 @@ const calculateCPUPercent = (stats) => {
 	return cpuPercent;
 };
 
-module.exports = { calculateCPUPercent };
+const getStats = () => {
+	return container.stats({ stream: false });
+};
+
+const getState = () => {
+	return container.inspect();
+};
+
+module.exports = { calculateCPUPercent, getState, getStats };
