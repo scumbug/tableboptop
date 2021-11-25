@@ -1,6 +1,7 @@
 const Docker = require('dockerode');
+require('dotenv').config();
 
-const docker = new Docker({ host: '192.168.1.32', port: 2375 });
+const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const container = docker.getContainer(process.env.FACTORYCONTAINER);
 
 const calculateCPUPercent = (stats) => {
@@ -22,4 +23,33 @@ const getState = () => {
 	return container.inspect();
 };
 
-module.exports = { calculateCPUPercent, getState, getStats };
+const restartContainer = () => {
+	return container.restart();
+};
+
+const getLogs = (options) => {
+	return container.logs(options);
+};
+
+const getArchive = (options) => {
+	return container.getArchive(options);
+};
+
+const stopContainer = () => {
+	return container.stop();
+};
+
+const startContainer = () => {
+	return container.start();
+};
+
+module.exports = {
+	calculateCPUPercent,
+	getState,
+	getStats,
+	restartContainer,
+	getLogs,
+	getArchive,
+	stopContainer,
+	startContainer,
+};

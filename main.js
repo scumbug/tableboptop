@@ -1,32 +1,16 @@
 // Include dependencies
-const {
-	Client,
-	Intents,
-	MessageEmbed,
-	MessageAttachment,
-	Collection
-} = require('discord.js');
-const Docker = require('dockerode');
-const { calculateCPUPercent } = require('./utils');
+const { Client, Intents, Collection } = require('discord.js');
 const fs = require('fs');
-const fetch = require('node-fetch');
-const FormData = require('form-data');
 require('dotenv').config();
-
-// initalise constants
-const B_TO_GB = 1073741824;
-const SERVER_UP_NOTIFICATION = 'LogGame: World Serialization (load)';
-
-// Init docker
-const docker = new Docker({ socketPath: 'cs-nas:2375' });
-const container = docker.getContainer(process.env.FACTORYCONTAINER);
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 // import commands JS
 client.commands = new Collection();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commandFiles = fs
+	.readdirSync('./commands')
+	.filter((file) => file.endsWith('.js'));
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
 	client.commands.set(command.data.name, command);
@@ -48,7 +32,10 @@ client.on('interactionCreate', async (interaction) => {
 		await command.execute(interaction);
 	} catch (error) {
 		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		await interaction.reply({
+			content: 'There was an error while executing this command!',
+			ephemeral: true,
+		});
 	}
 });
 
