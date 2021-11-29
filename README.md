@@ -24,7 +24,7 @@ This bot is tested on the @ich777 Satisfactory container but should work on any 
 
 ## Setup
 1. Setup your own app and create a bot. You can follow the guide here (https://discordjs.guide/preparations/setting-up-a-bot-application.html)
-2. Pull the project `git pull https://github.com/scumbug/tableboptop.git`
+2. Clone the project `git clone https://github.com/scumbug/tableboptop.git`
 3. Run `npm i` to install all dependencies
 4. Create a new file `.env` in the project root and add environment variables (listed below)
 5. Register commands to your bot via `node setup.js`
