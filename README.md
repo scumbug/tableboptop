@@ -3,10 +3,35 @@
 ## Description
 Simple discord bot to send docker commands to Satisfactory server hosted on docker via discord.
 
-## Deployment
+You will need to run the bot in the same docker instance as your server
+
+This bot is tested on the @ich777 Satisfactory container but should work on any dockerize Satisfactory server https://github.com/ich777/docker-steamcmd-server/tree/satisfactory
+
+## Commands
+
+|  Command |  Action |
+| ------------ | ------------ |
+| /restart-factory  |  Start or restart server |
+| /stop-factory  |  Stop server |
+| /grab-save | Grabs save files from your server |
+| /factory-status | Shows CPU and ram usage of your server |
+
+## Requirements
+
+- Satisfactory server running on a docker container
+- Discord bot must run on the same docker instance
+- Node 16.xx
+
+## Setup
 1. Setup your own app and create a bot. You can follow the guide here (https://discordjs.guide/preparations/setting-up-a-bot-application.html)
-2. Pull the container from docker hub https://hub.docker.com/r/scumbug/tableboptop
-3. Run the container with the following environment variables and path declared
+2. Pull the project `git pull https://github.com/scumbug/tableboptop.git`
+3. Run `npm i` to install all dependencies
+4. Create a new file `.env` in the project root and add environment variables (listed below)
+5. Register commands to your bot via `node setup.js`
+
+## Deployment
+1. Pull the container from docker hub https://hub.docker.com/r/scumbug/tableboptop
+2. Run the container with the following environment variables and path declared
 
 ```bash
 docker run \
