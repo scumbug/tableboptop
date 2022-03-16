@@ -2,19 +2,11 @@
 const { Client, Intents, Collection } = require('discord.js');
 const fs = require('fs');
 require('dotenv').config();
-
-const {
-  ETwitterStreamEvent,
-  TweetStream,
-  TwitterApi,
-  ETwitterApiError,
-} = require('twitter-api-v2');
+const lib = require('lib')({ token: process.env.STDLIB_SECRET_TOKEN });
+const cron = require('node-cron');
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-
-const twt = new TwitterApi(process.env.TWT_BEARER);
-let mention = 'Empty';
 
 // import commands JS
 client.commands = new Collection();
@@ -29,52 +21,49 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
   console.log('Ready!');
+  console.log(
+    await lib.utils.kv['@0.1.16'].tables.truncate({ table: 'scumbug' })
+  );
 
-  const addedRules = await twt.v2.updateStreamRules({
-    add: [{ value: 'from:SaintBotLoA' }],
-  });
-  const stream = await twt.v2.searchStream();
+  cron.schedule('*/10 * * * * *', async () => {
+    console.log('running');
+    let data = await lib.crawler.query['@0.0.2'].selectors({
+      url: `https://docs.google.com/spreadsheets/d/e/2PACX-1vSxDVCVha3TNmddh1k8ZXaswXnT5BVKhCflPuJ7x_HRCaqRbfmq8qHQ8h3z8KerqJ_ozu1vcU2DTpE7/pubhtml?gid=1483084052&single=true`,
+      userAgent: `stdlib/crawler/query`,
+      includeMetadata: false,
+      selectorQueries: [
+        {
+          selector: `.ritz`,
+          resolver: `text`,
+        },
+      ],
+    });
+    let votes = data.queryResults[0][0].text.substring(1).split('VOTE');
+    const channel = client.channels.cache.get(process.env.MERCHANT_CHANNEL_ID);
 
-  stream.on(
-    // Emitted when a Twitter payload (a tweet or not, given the endpoint).
-    ETwitterStreamEvent.Data,
-    (eventData) => {
-      console.log('Twitter has sent something:', eventData.data.text);
-      const channel = client.channels.cache.get(
-        process.env.MERCHANT_CHANNEL_ID
-      );
-
-      try {
-        if (eventData.data.text.includes(`${process.env.LA_SERVER}wei`)) {
-          //Mention Role ID For WEI
+    for (vote in votes) {
+      if (votes[vote].includes(`${process.env.LA_SERVER}wei`)) {
+        //Check if we've already sent a mention for this specific vote
+        let checkForDuplicate = await lib.utils.kv['@0.1.16'].get({
+          key: `${votes[vote]}`,
+          defaultValue: 'False',
+        });
+        if (checkForDuplicate == 'True') {
+          console.log('Duplicate Skipped');
+        } else {
+          //message being sent
           channel.send(`${process.env.WEI_ROLE}`);
+          //Prevent vote from being sent out for 1 week
+          let sentMention = await lib.utils.kv['@0.1.16'].set({
+            key: `${votes[vote]}`,
+            value: 'True',
+            ttl: 172800,
+          });
         }
-      } catch (err) {
-        console.log(err);
       }
     }
-  );
-
-  stream.on(
-    // Emitted when Node.js {response} emits a 'error' event (contains its payload).
-    ETwitterStreamEvent.ConnectionError,
-    (err) => console.log('Connection error!', err)
-  );
-
-  stream.on(
-    // Emitted when Node.js {response} is closed by remote or using .close().
-    ETwitterStreamEvent.ConnectionClosed,
-    () => console.log('Connection has been closed.')
-  );
-
-  stream.on(
-    // Emitted when a Twitter sent a signal to maintain connection active
-    ETwitterStreamEvent.DataKeepAlive,
-    () => console.log('Twitter has a keep-alive packet.')
-  );
-
-  // Enable reconnect feature
-  stream.autoReconnect = true;
+    console.log(await lib.utils.kv['@0.1.16'].entries());
+  });
 });
 
 client.on('interactionCreate', async (interaction) => {
