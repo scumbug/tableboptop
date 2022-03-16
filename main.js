@@ -21,11 +21,8 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
   console.log('Ready!');
-  console.log(
-    await lib.utils.kv['@0.1.16'].tables.truncate({ table: 'scumbug' })
-  );
 
-  cron.schedule('*/10 * * * * *', async () => {
+  cron.schedule('* * * * *', async () => {
     console.log('running');
     let data = await lib.crawler.query['@0.0.2'].selectors({
       url: `https://docs.google.com/spreadsheets/d/e/2PACX-1vSxDVCVha3TNmddh1k8ZXaswXnT5BVKhCflPuJ7x_HRCaqRbfmq8qHQ8h3z8KerqJ_ozu1vcU2DTpE7/pubhtml?gid=1483084052&single=true`,
