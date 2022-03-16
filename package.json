@@ -16,6 +16,8 @@
     "dockerode": "^3.3.1",
     "dotenv": "^10.0.0",
     "form-data": "^4.0.0",
+    "lib": "^4.3.3",
+    "node-cron": "^3.0.0",
     "node-fetch": "^2.6.6",
     "twitter-api-v2": "^1.11.0"
   }
