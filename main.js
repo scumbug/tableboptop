@@ -67,11 +67,11 @@ const merchantAlerts = async (message) => {
 
       if (s.includes('Up-and-coming contributor'))
         channel.send(
-          `${process.env.WEI_ROLE} Wei card popped, trust level: medium`
+          `${process.env.WEI_ROLE} Wei card popped, trust level: **Medium**`
         );
       else if (s.includes('Trusted Voter'))
         channel.send(
-          `${process.env.WEI_ROLE} Wei card popped, trust level: high`
+          `${process.env.WEI_ROLE} Wei card popped, trust level: **High**`
         );
       else
         channel.send(
