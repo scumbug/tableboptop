@@ -62,11 +62,21 @@ const merchantAlerts = async (message) => {
     console.log(item + ' popped');
 
     // ping role for wei card
-    if (item.includes('Wei Card')) {
+    if (item.includes('No Good Items')) {
       console.log('Wei popped, alerting peeps');
-      channel.send(
-        `${process.env.WEI_ROLE} unconfirmed Wei popped, check at your risk!`
-      );
+
+      if (s.includes('Up-and-coming contributor'))
+        channel.send(
+          `${process.env.WEI_ROLE} Wei card popped, trust level: medium`
+        );
+      else if (s.includes('Trusted Voter'))
+        channel.send(
+          `${process.env.WEI_ROLE} Wei card popped, trust level: high`
+        );
+      else
+        channel.send(
+          `${process.env.WEI_ROLE} Unconfirmed Wei popped, check at your risk!`
+        );
     }
   }
 };
