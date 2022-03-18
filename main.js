@@ -58,14 +58,15 @@ const merchantAlerts = async (message) => {
     const s = message.embeds[0].description;
     const start = '```fix\n';
     const end = '```\n';
-    const item =
-      s.slice(s.indexOf(start) + start.length - 1, s.indexOf(end)) + ' popped';
+    const item = s.slice(s.indexOf(start) + start.length - 1, s.indexOf(end));
     console.log(item + ' popped');
 
     // ping role for wei card
     if (item.includes('Wei Card')) {
       console.log('Wei popped, alerting peeps');
-      channel.send(`${process.env.WEI_ROLE}`);
+      channel.send(
+        `${process.env.WEI_ROLE} unconfirmed Wei popped, check at your risk!`
+      );
     }
   }
 };
