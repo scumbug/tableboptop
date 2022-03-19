@@ -56,13 +56,13 @@ const merchantAlerts = async (message) => {
   if (message.channelId == process.env.MCT_CHN && !!message.embeds.length) {
     // log pings
     const s = message.embeds[0].description;
-    const start = '```fix\n';
+    const start = '**Item**: ```';
     const end = '```\n';
-    const item = s.slice(s.indexOf(start) + start.length - 1, s.indexOf(end));
-    console.log(item + ' popped');
+    const item = s.slice(s.indexOf(start) + start.length + 3, s.indexOf(end));
+    console.log(item.trim() + ' popped');
 
     // ping role for wei card
-    if (item.includes('Wei Card')) {
+    if (item.includes('No Good Items')) {
       console.log('Wei popped, alerting peeps');
 
       if (s.includes('Up-and-coming contributor'))
