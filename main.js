@@ -62,7 +62,7 @@ const merchantAlerts = async (message) => {
     console.log(item.trim() + ' popped');
 
     // ping role for wei card
-    if (item.includes('No Good Items')) {
+    if (item.includes('Wei Card')) {
       console.log('Wei popped, alerting peeps');
 
       if (s.includes('Up-and-coming contributor'))
