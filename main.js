@@ -77,6 +77,21 @@ const merchantAlerts = async (message) => {
         channel.send(
           `${process.env.WEI_ROLE} Unconfirmed Wei popped, check at your risk!`
         );
+    } else if (item.includes('Seria Card')) {
+      console.log('Seria popped, alerting Seria role');
+
+      if (s.includes('Up-and-coming contributor'))
+        channel.send(
+          `${process.env.SERIA_ROLE} Seria card popped, trust level: **Medium**`
+        );
+      else if (s.includes('Trusted Voter'))
+        channel.send(
+          `${process.env.SERIA_ROLE} Seria card popped, trust level: **High**`
+        );
+      else
+        channel.send(
+          `${process.env.SERIA_ROLE} Unconfirmed Seria popped, check at your risk!`
+        );
     }
   }
 };
