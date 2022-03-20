@@ -53,7 +53,7 @@ client.login(process.env.TOKEN);
 const merchantAlerts = async (message) => {
   const channel = client.channels.cache.get(process.env.MCT_CHN);
 
-  if (!!message.embeds.length) {
+  if (message.channelId == process.env.MCT_CHN && !!message.embeds.length) {
     // log pings
     const s = message.embeds[0].description;
     const start = '**Item**: ```';
