@@ -53,45 +53,54 @@ client.login(process.env.TOKEN);
 const merchantAlerts = async (message) => {
   const channel = client.channels.cache.get(process.env.MCT_CHN);
 
-  if (message.channelId == process.env.MCT_CHN && !!message.embeds.length) {
+  if (!!message.embeds.length) {
     // log pings
     const s = message.embeds[0].description;
     const start = '**Item**: ```';
     const end = '```\n';
     const item = s.slice(s.indexOf(start) + start.length + 3, s.indexOf(end));
+    const trust = s.includes('Up-and-coming contributor')
+      ? 'Medium'
+      : s.includes('Trusted Voter')
+      ? 'High'
+      : 'Low, check at your risk!';
     console.log(item.trim() + ' popped');
 
     // ping role for wei card
-    if (item.includes('Wei Card')) {
-      console.log('Wei popped, alerting peeps');
-
-      if (s.includes('Up-and-coming contributor'))
-        channel.send(
-          `${process.env.WEI_ROLE} Wei card popped, trust level: **Medium**`
-        );
-      else if (s.includes('Trusted Voter'))
-        channel.send(
-          `${process.env.WEI_ROLE} Wei card popped, trust level: **High**`
-        );
-      else
-        channel.send(
-          `${process.env.WEI_ROLE} Unconfirmed Wei popped, check at your risk!`
-        );
-    } else if (item.includes('Seria Card')) {
-      console.log('Seria popped, alerting Seria role');
-
-      if (s.includes('Up-and-coming contributor'))
-        channel.send(
-          `${process.env.SERIA_ROLE} Seria card popped, trust level: **Medium**`
-        );
-      else if (s.includes('Trusted Voter'))
-        channel.send(
-          `${process.env.SERIA_ROLE} Seria card popped, trust level: **High**`
-        );
-      else
-        channel.send(
-          `${process.env.SERIA_ROLE} Unconfirmed Seria popped, check at your risk!`
-        );
+    if (item.includes('Wei')) {
+      pingRoles(process.env.WEI_ROLE, item, trust, channel);
+    } else if (item.includes('Seria')) {
+      pingRoles(process.env.SERIA_ROLE, item, trust, channel);
+    } else if (item.includes('Legendary Rapport')) {
+      pingRoles(process.env.RAPPORT_ROLE, item, trust, channel);
+    } else if (item.includes('Madnick')) {
+      pingRoles(process.env.MADNICK_ROLE, item, trust, channel);
+    } else if (item.includes('Sian')) {
+      pingRoles(process.env.SIAN_ROLE, item, trust, channel);
     }
   }
+};
+
+const pingRoles = async (role, item, trust, channel) => {
+  console.log(`${item} popped, alerting peeps`);
+  return await channel.send(
+    `${role} **${item}** popped, trust level: **${trust}**`
+  );
+};
+
+const testPing = async (message) => {
+  const channel = client.channels.cache.get('');
+
+  const merchn = client.channels.cache.get('');
+
+  const msgs = await merchn.messages.fetch({ limit: 30 });
+
+  msgs.forEach(async (message) => await merchantAlerts(message));
+
+  pingRoles(
+    '<@&953626513415209030>',
+    'testing',
+    'Low, check at your risk',
+    channel
+  );
 };
