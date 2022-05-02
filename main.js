@@ -94,6 +94,7 @@ const merchantAlerts = async (message) => {
       -3
     );
     const location = s.find((line) => line.includes('**Location**'));
+    const spawned = s.find((line) => line.includes('**Spawned**'));
 
     // log pings
     console.log(item + ' popped');
@@ -103,7 +104,8 @@ const merchantAlerts = async (message) => {
       console.log(`Alerting peeps with ${item} role`);
       return await channel.send(
         `${role} **${item}** popped \n` +
-          `${location} \n\n` +
+          `${location} \n` +
+          `${spawned} \n\n` +
           `More details: ${message.url}`
       );
     };
@@ -175,9 +177,10 @@ const testPing = async () => {
         s.findIndex((line) => line.includes('**Item**')) + 1
       ].slice(0, -3);
       const location = s.find((line) => line.includes('**Location**'));
+      const spawned = s.find((line) => line.includes('**Spawned**'));
 
       channel.send(
-        `roleping\n**${item}** popped. \n${location} \n\nMore Details: ${message.url}`
+        `roleping\n**${item}** popped. \n${location}\n ${spawned}\n\nMore Details: ${message.url}`
       );
     }
   });
