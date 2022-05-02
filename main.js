@@ -1,8 +1,12 @@
 // Include dependencies
+const { channel } = require('diagnostics_channel');
 const { Client, Intents, Collection } = require('discord.js');
 const fs = require('fs');
 const http = require('http');
 require('dotenv').config();
+const fetch = require('node-fetch');
+const parser = require('node-html-parser');
+const schedule = require('node-schedule');
 
 // Allow health checks on fly.io to ping bot
 http
@@ -15,7 +19,11 @@ http
 
 // Create a new client instance
 const client = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.GUILD_PRESENCES,
+  ],
 });
 
 // import commands JS
@@ -31,6 +39,22 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
   console.log('Ready!');
+
+  client.user.setActivity('Initializing...');
+
+  // Update server status
+  schedule.scheduleJob('*/1 * * * *', async () => {
+    const status = await serverStatus(process.env.LA_SERVER);
+    const old = client.user.presence.activities[0].name;
+
+    // check if out of maint
+    if (old.includes('Maint') && status != 'Maint')
+      // TODO
+      console.log('ping');
+
+    // set new status
+    client.user.setActivity(`Lost Ark | Valtan: ${status}`);
+  });
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -105,4 +129,46 @@ const testPing = async (message) => {
     if (message.embeds[0].description.includes('css'))
       console.log(message.embeds[0].description);
   });
+};
+
+const serverStatus = async (name) => {
+  const MAINT_CLASS =
+    '.ags-ServerStatus-content-responses-response-server-status--maintenance';
+  const UP_CLASS =
+    '.ags-ServerStatus-content-responses-response-server-status--good';
+  const BUSY_CLASS =
+    '.ags-ServerStatus-content-responses-response-server-status--busy';
+  const FULL_CLASS =
+    '.ags-ServerStatus-content-responses-response-server-status--full';
+  const NAME_CLASS = '.ags-ServerStatus-content-responses-response-server-name';
+
+  const rawHTML = await fetch(
+    'https://www.playlostark.com/en-us/support/server-status'
+  );
+
+  const root = parser.parse(await rawHTML.text());
+
+  for (let server of root.querySelectorAll(NAME_CLASS)) {
+    if (server.text.trim() == name) {
+      // maintenance
+      if (server.parentNode.querySelector(MAINT_CLASS) != null) {
+        return 'Maint';
+      }
+      // server full
+      else if (server.parentNode.querySelector(FULL_CLASS) != null) {
+        return 'Full';
+      }
+      // server busy
+      else if (server.parentNode.querySelector(BUSY_CLASS) != null) {
+        return 'Busy';
+      }
+      // server good
+      else if (server.parentNode.querySelector(UP_CLASS) != null) {
+        return 'Good';
+      }
+    }
+  }
+
+  // no match found server is down
+  return 'Maint';
 };
