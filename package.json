@@ -19,5 +19,8 @@
     "node-fetch": "^2.6.6",
     "node-html-parser": "^5.3.3",
     "node-schedule": "^2.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.14.0"
   }
 }
