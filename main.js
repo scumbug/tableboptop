@@ -3,9 +3,8 @@ const { Client, Intents, Collection } = require('discord.js');
 const fs = require('fs');
 const http = require('http');
 require('dotenv').config();
-const fetch = require('node-fetch');
-const parser = require('node-html-parser');
 const schedule = require('node-schedule');
+const { serverStatus, merchantAlerts } = require('./utils/lostarkUtils');
 
 // Allow health checks on fly.io to ping bot
 http
@@ -76,99 +75,33 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('messageCreate', async (message) => {
   // Wei Card Ping
-  merchantAlerts(message);
+  merchantAlerts(message, client);
 });
 
 // Login to Discord with your client's token
 client.login(process.env.TOKEN);
 
-// Wei Card Pinger Function
-/** @param {Message} message */
-const merchantAlerts = async (message) => {
-  const channel = client.channels.cache.get(process.env.ANN_CHN);
-
-  if (message.embeds.length && message.channelId == process.env.MCT_CHN) {
-    const s = message.embeds[0].description.split('\n');
-    const item = s[s.findIndex((line) => line.includes('**Item**')) + 1].slice(
-      0,
-      -3
-    );
-    const location = s.find((line) => line.includes('**Location**'));
-    const spawned = s.find((line) => line.includes('**Spawned**'));
-
-    // log pings
-    console.log(item + ' popped');
-
-    // ping role function
-    const pingRoles = async (role) => {
-      console.log(`Alerting peeps with ${item} role`);
-      return await channel.send(
-        `${role} **${item}** popped \n` +
-          `${location} \n` +
-          `${spawned} \n\n` +
-          `More details: ${message.url}`
-      );
-    };
-
-    // ping role for items
-    if (item.includes('Rapport')) pingRoles(process.env.RAPPORT_ROLE);
-    if (item.includes('Wei')) pingRoles(process.env.WEI_ROLE);
-    else if (item.includes('Seria')) pingRoles(process.env.SERIA_ROLE);
-    else if (item.includes('Madnick')) pingRoles(process.env.MADNICK_ROLE);
-    else if (item.includes('Sian')) pingRoles(process.env.SIAN_ROLE);
-  }
-};
-
-const serverStatus = async (name) => {
-  const MAINT_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--maintenance';
-  const UP_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--good';
-  const BUSY_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--busy';
-  const FULL_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--full';
-  const NAME_CLASS = '.ags-ServerStatus-content-responses-response-server-name';
-
-  const rawHTML = await fetch(
-    'https://www.playlostark.com/en-us/support/server-status'
-  );
-
-  const root = parser.parse(await rawHTML.text());
-
-  for (let server of root.querySelectorAll(NAME_CLASS)) {
-    if (server.text.trim() == name) {
-      // maintenance
-      if (server.parentNode.querySelector(MAINT_CLASS) != null) {
-        return 'Maint';
-      }
-      // server full
-      else if (server.parentNode.querySelector(FULL_CLASS) != null) {
-        return 'Full';
-      }
-      // server busy
-      else if (server.parentNode.querySelector(BUSY_CLASS) != null) {
-        return 'Busy';
-      }
-      // server good
-      else if (server.parentNode.querySelector(UP_CLASS) != null) {
-        return 'Good';
-      }
-    }
-  }
-
-  // no match found server is down
-  return 'Maint';
-};
-
 // Debugging func
 /*
 const testPing = async () => {
-  const channel = client.channels.cache.get('');
+  const channel = client.channels.cache.get('900970469614833674');
 
   const merchn = client.channels.cache.get('');
 
   const msgs = await merchn.messages.fetch({ limit: 100 });
+
+  channel.send({
+    content: 'roleping',
+    embeds: [
+      embedMerchant(
+        '**[test]**',
+        'https://i.imgur.com/P6s2yVy.png',
+        'Location: [Anikka] [Prisma Valley]',
+        'Spawned: 13 hours ago',
+        'https://discord.com/channels/226688777026928641/952552366031376414/970754519732478013'
+      ),
+    ],
+  });
 
   msgs.forEach((message) => {
     if (message.embeds[0]) {
