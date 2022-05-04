@@ -39,13 +39,17 @@ client.once('ready', async () => {
     const channel = client.channels.cache.get(process.env.LA_CHN);
 
     // Ping on status change
-    if (old.includes('MAINT') && status !== 'MAINT') {
+    if (old.includes('MAINT') && !status.includes('MAINT')) {
       await channel.send('Server is up!');
-    } else if (!old.includes('MAINT') && status === 'MAINT') {
+    } else if (
+      !old.includes('MAINT') &&
+      !old.includes('Initializing') &&
+      status.includes('MAINT')
+    ) {
       await channel.send('Lost Ark went into maintenance');
     }
     // set new status
-    client.user.setActivity(`Lost Ark | ${process.env.LA_SERVER}: ${status}`);
+    client.user.setActivity(`LOA | ${process.env.LA_SERVER}: ${status}`);
   });
 });
 
