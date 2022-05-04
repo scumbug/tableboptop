@@ -39,9 +39,9 @@ client.once('ready', async () => {
     const channel = client.channels.cache.get(process.env.LA_CHN);
 
     // Ping on status change
-    if (old.includes('Maint') && status != 'Maint') {
+    if (old.includes('MAINT') && status !== 'MAINT') {
       await channel.send('Server is up!');
-    } else if (!old.includes('Maint') && status === 'Maint') {
+    } else if (!old.includes('MAINT') && status === 'MAINT') {
       await channel.send('Lost Ark went into maintenance');
     }
     // set new status

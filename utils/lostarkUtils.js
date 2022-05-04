@@ -31,7 +31,7 @@ const serverStatus = async (name) => {
 
     return status.split('-').at(-1).slice(0, 5).toUpperCase();
   } catch (error) {
-    return 'Maint';
+    return 'MAINT';
   }
 };
 
