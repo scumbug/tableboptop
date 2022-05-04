@@ -1,6 +1,12 @@
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed, Client, Message } = require('discord.js');
 const fetch = require('node-fetch');
 const parser = require('node-html-parser');
+const {
+  itemList,
+  URL_REGEX,
+  NAME_CLASS,
+  STATUS_CLASSES,
+} = require('./constants');
 
 /**
  * Returns lost ark server status
@@ -8,88 +14,65 @@ const parser = require('node-html-parser');
  * @returns {string}
  */
 const serverStatus = async (name) => {
-  const MAINT_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--maintenance';
-  const UP_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--good';
-  const BUSY_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--busy';
-  const FULL_CLASS =
-    '.ags-ServerStatus-content-responses-response-server-status--full';
-  const NAME_CLASS = '.ags-ServerStatus-content-responses-response-server-name';
+  try {
+    const rawHTML = await fetch(
+      'https://www.playlostark.com/en-us/support/server-status'
+    );
 
-  const rawHTML = await fetch(
-    'https://www.playlostark.com/en-us/support/server-status'
-  );
+    const root = parser.parse(await rawHTML.text());
 
-  const root = parser.parse(await rawHTML.text());
+    const server = root
+      .querySelectorAll(NAME_CLASS)
+      .find((serverBlock) => serverBlock.text.trim() === name);
 
-  for (let server of root.querySelectorAll(NAME_CLASS)) {
-    if (server.text.trim() == name) {
-      // maintenance
-      if (server.parentNode.querySelector(MAINT_CLASS) != null) {
-        return 'Maint';
-      }
-      // server full
-      else if (server.parentNode.querySelector(FULL_CLASS) != null) {
-        return 'Full';
-      }
-      // server busy
-      else if (server.parentNode.querySelector(BUSY_CLASS) != null) {
-        return 'Busy';
-      }
-      // server good
-      else if (server.parentNode.querySelector(UP_CLASS) != null) {
-        return 'Good';
-      }
-    }
+    const status = STATUS_CLASSES.find((statusClass) =>
+      server.parentNode.querySelector(statusClass)
+    );
+
+    return status.split('-').at(-1).slice(0, 5).toUpperCase();
+  } catch (error) {
+    return 'Maint';
   }
-
-  // no match found server is down
-  return 'Maint';
 };
 
-// Wei Card Pinger Function
 /**
- *
+ * Card Pinger Function
  * @param {Message} message
  * @param {Client} client
  */
 const merchantAlerts = async (message, client) => {
-  if (message.embeds.length && message.channelId == process.env.MCT_CHN) {
-    const s = message.embeds[0].description.split('\n');
+  const s = message.embeds[0].description.split('\n');
 
-    // build embed payload
-    const details = {
-      item: s[s.findIndex((l) => l.includes('**Item**')) + 1].slice(0, -3),
-      location: s.find((l) => l.includes('**Location**')),
-      spawned: s.find((l) => l.includes('**Spawned**')),
-      orig: message.url,
-    };
+  // build embed payload
+  const details = {
+    item: s[s.findIndex((l) => l.includes('**Item**')) + 1].slice(0, -3),
+    location: s.find((l) => l.includes('**Location**')),
+    spawned: s.find((l) => l.includes('**Spawned**')),
+    orig: message.url,
+  };
 
-    // add map img to payload
-    details.image = details.location.match(URL_REGEX)[0];
+  // add map img to payload
+  details.image = details.location.match(URL_REGEX)[0];
 
-    // log pings
-    console.log(details.item + ' popped');
+  // log pings
+  console.log(`INFO: ${details.item} popped`);
 
-    // ping role function
-    const pingRoles = async (role) => {
-      const channel = client.channels.cache.get(process.env.ANN_CHN);
-      console.log(`Alerting peeps with ${details.item} role`);
+  try {
+    const channel = client.channels.cache.get(process.env.ANN_CHN);
+
+    const role = itemList
+      .filter((item) => details.item.includes(item.itemName))
+      .map(({ role }) => role)
+      .join('');
+
+    if (!role) throw `WARN: Role for ${details.item} is undefined`;
+    else
       return await channel.send({
-        content: `${role}`,
+        content: role,
         embeds: [embedMerchant(details)],
       });
-    };
-
-    // ping role for items
-    if (details.item.includes('Rapport')) pingRoles(process.env.RAPPORT_ROLE);
-    if (details.item.includes('Wei')) pingRoles(process.env.WEI_ROLE);
-    else if (details.item.includes('Seria')) pingRoles(process.env.SERIA_ROLE);
-    else if (details.item.includes('Madnick'))
-      pingRoles(process.env.MADNICK_ROLE);
-    else if (details.item.includes('Sian')) pingRoles(process.env.SIAN_ROLE);
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -105,9 +88,6 @@ const embedMerchant = (details) => {
     .setDescription(`${details.location}\n ${details.spawned}`)
     .addField('More Details', details.orig, true);
 };
-
-const URL_REGEX =
-  /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/;
 
 module.exports = {
   serverStatus,
