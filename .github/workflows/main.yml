@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -35,11 +36,13 @@ jobs:
         run: echo ${{ steps.docker_build.outputs.digest }}
 
   deploy:
+    name: Deploy
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
       - name: Deploy Bot
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy -a tableboptop -i scumbug/tableboptop --remote-only
+        uses: superfly/flyctl-actions/setup-flyctl@master
+        run: flyctl deploy -a tableboptop -i scumbug/tableboptop --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
