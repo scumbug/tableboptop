@@ -29,9 +29,13 @@ const serverStatus = async (name) => {
       server.parentNode.querySelector(statusClass)
     );
 
-    return status.split('-').at(-1).slice(0, 5).toUpperCase();
+    return status
+      .split('-')
+      .at(-1)
+      .slice(0, 5)
+      .replace(/\b\w/, (c) => c.toUpperCase());
   } catch (error) {
-    return 'MAINT';
+    return 'Maint';
   }
 };
 
