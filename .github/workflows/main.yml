@@ -41,8 +41,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy Bot
+      - name: Setup fly
         uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy Bot
         run: flyctl deploy -a tableboptop -i scumbug/tableboptop --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
