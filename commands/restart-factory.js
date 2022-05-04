@@ -7,9 +7,7 @@ const SERVER_UP_NOTIFICATION =
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('restart-factory')
-    .setDescription(
-      'Restart Satisfactory Server, make sure you leave game first!'
-    ),
+    .setDescription('Restart Satisfactory Server, make sure you leave game first!'),
   async execute(interaction) {
     await interaction.deferReply('Restarting server, please hodl...');
     try {

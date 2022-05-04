@@ -1,12 +1,7 @@
 const { MessageEmbed, Client, Message } = require('discord.js');
 const fetch = require('node-fetch');
 const parser = require('node-html-parser');
-const {
-  itemList,
-  URL_REGEX,
-  NAME_CLASS,
-  STATUS_CLASSES,
-} = require('./constants');
+const { itemList, URL_REGEX, NAME_CLASS, STATUS_CLASSES } = require('./constants');
 
 /**
  * Returns lost ark server status
@@ -15,9 +10,7 @@ const {
  */
 const serverStatus = async (name) => {
   try {
-    const rawHTML = await fetch(
-      'https://www.playlostark.com/en-us/support/server-status'
-    );
+    const rawHTML = await fetch('https://www.playlostark.com/en-us/support/server-status');
 
     const root = parser.parse(await rawHTML.text());
 
@@ -25,11 +18,7 @@ const serverStatus = async (name) => {
       .querySelectorAll(NAME_CLASS)
       .find((serverBlock) => serverBlock.text.trim() === name);
 
-    const status = STATUS_CLASSES.find((statusClass) =>
-      server.parentNode.querySelector(statusClass)
-    );
-
-    return status
+    return STATUS_CLASSES.find((status) => server.parentNode.querySelector(status))
       .split('-')
       .at(-1)
       .slice(0, 5)

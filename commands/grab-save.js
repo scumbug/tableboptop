@@ -32,9 +32,7 @@ module.exports = {
         })
       ).json();
 
-      await interaction.editReply(
-        `Download save file @ ${upload.data.downloadPage}`
-      );
+      await interaction.editReply(`Download save file @ ${upload.data.downloadPage}`);
 
       // delete tmp file
       fs.unlink('latest-save.tar', (err) => {

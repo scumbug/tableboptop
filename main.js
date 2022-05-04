@@ -1,5 +1,5 @@
 // Include dependencies
-const { Client, Intents, Collection } = require('discord.js');
+const { Client, Intents, Collection, TextChannel } = require('discord.js');
 const fs = require('fs');
 const http = require('http');
 const schedule = require('node-schedule');
@@ -9,18 +9,12 @@ require('dotenv').config();
 
 // Create a new client instance
 const client = new Client({
-  intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_PRESENCES,
-  ],
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_PRESENCES],
 });
 
 // import commands JS
 client.commands = new Collection();
-const commandFiles = fs
-  .readdirSync('./commands')
-  .filter((file) => file.endsWith('.js'));
+const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith('.js'));
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   client.commands.set(command.data.name, command);
@@ -73,7 +67,7 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('messageCreate', async (message) => {
   // filter Saint Bot announcements
-  if (message.embeds.length && message.channelId == process.env.MCT_CHN) {
+  if (message.embeds.length && message.channelId === process.env.MCT_CHN) {
     // Card pinger
     merchantAlerts(message, client);
   }

@@ -4,9 +4,7 @@ const { stopContainer } = require('../utils/dockerUtils');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('stop-factory')
-    .setDescription(
-      'Stop Satisfactory Server, make sure you leave game first!'
-    ),
+    .setDescription('Stop Satisfactory Server, make sure you leave game first!'),
   async execute(interaction) {
     await interaction.deferReply('Restarting server, please hodl...');
     try {
