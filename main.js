@@ -27,12 +27,12 @@ client.once('ready', async () => {
 
   // Update server status
   schedule.scheduleJob('*/1 * * * *', async () => {
-    const status = await serverStatus(process.env.LA_SERVER);
-    const old = client.user.presence.activities[0].name;
-
-    const channel = client.channels.cache.get(process.env.LA_CHN);
-
     try {
+      const status = await serverStatus(process.env.LA_SERVER);
+      const old = client.user.presence.activities[0].name;
+
+      const channel = client.channels.cache.get(process.env.LA_CHN);
+
       // Ping on status change
       if (old.includes('Maint') && !status.includes('Maint')) {
         await channel.send('Server is up!');
