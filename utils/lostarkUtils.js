@@ -9,23 +9,19 @@ const { itemList, URL_REGEX, NAME_CLASS, STATUS_CLASSES } = require('./constants
  * @returns {string}
  */
 const serverStatus = async (name) => {
-  try {
-    const rawHTML = await fetch('https://www.playlostark.com/en-us/support/server-status');
+  const rawHTML = await fetch('https://www.playlostark.com/en-us/support/server-status');
 
-    const root = parser.parse(await rawHTML.text());
+  const root = parser.parse(await rawHTML.text());
 
-    const server = root
-      .querySelectorAll(NAME_CLASS)
-      .find((serverBlock) => serverBlock.text.trim() === name);
+  const server = root
+    .querySelectorAll(NAME_CLASS)
+    .find((serverBlock) => serverBlock.text.trim() === name);
 
-    return STATUS_CLASSES.find((status) => server.parentNode.querySelector(status))
-      .split('-')
-      .at(-1)
-      .slice(0, 5)
-      .replace(/\b\w/, (c) => c.toUpperCase());
-  } catch (error) {
-    console.log('Status not available, checking again in 1 min');
-  }
+  return STATUS_CLASSES.find((status) => server.parentNode.querySelector(status))
+    .split('-')
+    .at(-1)
+    .slice(0, 5)
+    .replace(/\b\w/, (c) => c.toUpperCase());
 };
 
 /**
