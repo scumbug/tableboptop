@@ -1,4 +1,4 @@
-const { MessageEmbed, Client, Message } = require('discord.js');
+const { MessageEmbed } = require('discord.js');
 const fetch = require('node-fetch');
 const parser = require('node-html-parser');
 const { itemList, URL_REGEX, NAME_CLASS, STATUS_CLASSES } = require('./constants');
@@ -24,7 +24,7 @@ const serverStatus = async (name) => {
       .slice(0, 5)
       .replace(/\b\w/, (c) => c.toUpperCase());
   } catch (error) {
-    return 'Maint';
+    console.log('Status not available, checking again in 1 min');
   }
 };
 

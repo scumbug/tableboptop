@@ -1,5 +1,5 @@
 // Include dependencies
-const { Client, Intents, Collection, TextChannel } = require('discord.js');
+const { Client, Intents, Collection } = require('discord.js');
 const fs = require('fs');
 const http = require('http');
 const schedule = require('node-schedule');
