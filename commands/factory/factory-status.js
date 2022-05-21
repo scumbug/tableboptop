@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageEmbed } = require('discord.js');
-const { getState, getStats } = require('../utils/dockerUtils');
-const { calculateCPUPercent } = require('../utils/dockerUtils');
+const { docker, calculateCPUPercent } = require('../../utils/dockerUtils');
 
 // initalise constants
 const B_TO_GB = 1073741824;
@@ -11,8 +10,9 @@ module.exports = {
     .setName('factory-status')
     .setDescription('Replies with server info!'),
   async execute(interaction) {
-    const stats = await getStats();
-    const state = await getState();
+    const container = docker.getContainer(process.env.FACTORYCONTAINER);
+    const stats = await container.stats({ stream: false });
+    const state = await container.inspect();
 
     const memUsage = (stats.memory_stats.usage / B_TO_GB).toFixed(2);
 

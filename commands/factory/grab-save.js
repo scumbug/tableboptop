@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { getArchive } = require('../utils/dockerUtils');
+const { getArchive } = require('../../utils/dockerUtils');
 const fs = require('fs');
 const fetch = require('node-fetch');
 const FormData = require('form-data');

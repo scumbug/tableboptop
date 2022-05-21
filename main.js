@@ -1,6 +1,6 @@
 // Include dependencies
 const { Client, Intents, Collection } = require('discord.js');
-const fs = require('fs');
+const { dirs } = require('./utils/helpers');
 const http = require('http');
 const schedule = require('node-schedule');
 const { serverStatus, merchantAlerts } = require('./utils/lostarkUtils');
@@ -14,10 +14,14 @@ const client = new Client({
 
 // import commands JS
 client.commands = new Collection();
-const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith('.js'));
+
+const commandFiles = dirs('./commands');
+
 for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  client.commands.set(command.data.name, command);
+  if (file.endsWith('.js')) {
+    const command = require(`./${file}`);
+    client.commands.set(command.data.name, command);
+  }
 }
 
 // When the client is ready, run this code (only once)

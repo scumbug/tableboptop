@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { restartContainer, getLogs } = require('../utils/dockerUtils');
+const { docker } = require('../../utils/dockerUtils');
 
 const SERVER_UP_NOTIFICATION =
   'seconds to LoadMap(/Game/FactoryGame/Map/GameLevel01/Persistent_Level)';
@@ -9,14 +9,15 @@ module.exports = {
     .setName('restart-factory')
     .setDescription('Restart Satisfactory Server, make sure you leave game first!'),
   async execute(interaction) {
+    const container = docker.getContainer(process.env.FACTORYCONTAINER);
     await interaction.deferReply('Restarting server, please hodl...');
     try {
-      await restartContainer();
+      await container.restart();
     } catch (error) {
       await interaction.editReply(`Sumting wong: ${error.reason}`);
       return null;
     }
-    const stream = await getLogs({
+    const stream = await container.logs({
       follow: true,
       stdout: true,
       tail: 10,
