@@ -14,7 +14,7 @@ module.exports = {
     const stats = await container.stats({ stream: false });
     const state = await container.inspect();
 
-    const memUsage = (stats.memory_stats.usage / B_TO_GB).toFixed(2);
+    const memUsage = ((stats.memory_stats.usage - stats.memory_stats.stats.total_inactive_file) / B_TO_GB).toFixed(2);
 
     const statsEmbed = new MessageEmbed()
       .setTitle('VRising Server Stats')
