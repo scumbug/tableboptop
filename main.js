@@ -2,8 +2,8 @@
 const { Client, Intents, Collection } = require('discord.js');
 const { dirs } = require('./utils/helpers');
 const http = require('http');
-const schedule = require('node-schedule');
-const { serverStatus, merchantAlerts } = require('./utils/lostarkUtils');
+const { merchantAlerts } = require('./utils/lostarkUtils');
+const { runScheduler } = require('./utils/scheduler');
 
 require('dotenv').config();
 
@@ -29,30 +29,8 @@ client.once('ready', async () => {
   console.log('Ready!');
   client.user.setActivity('Initializing...');
 
-  // Update server status
-  schedule.scheduleJob('*/1 * * * *', async () => {
-    try {
-      const status = await serverStatus(process.env.LA_SERVER);
-      const old = client.user.presence.activities[0].name;
-
-      const channel = client.channels.cache.get(process.env.LA_CHN);
-
-      // Ping on status change
-      if (old.includes('Maint') && !status.includes('Maint')) {
-        await channel.send('Server is up!');
-      } else if (
-        !old.includes('Maint') &&
-        !old.includes('Initializing') &&
-        status.includes('Maint')
-      ) {
-        await channel.send('Lost Ark went into maintenance');
-      }
-      // set new status
-      client.user.setActivity(`Lost Ark | ${process.env.LA_SERVER}: ${status}`);
-    } catch (error) {
-      console.log('Status not available, checking again in 1 min');
-    }
-  });
+  // Start crons
+  runScheduler(client);
 });
 
 client.on('interactionCreate', async (interaction) => {

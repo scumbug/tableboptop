@@ -78,7 +78,63 @@ const embedMerchant = (details) => {
     .addField('More Details', details.orig, true);
 };
 
+/*
+  Lost Ark Merchant Alerts V2
+*/
+
+/**
+ * Function to build full merchants listing
+ * @param {Array} data
+ * @param {Date} spawnTime
+ * @returns {MessageEmbed}
+ */
+const buildMerchantEmbed = async (data, spawnTime) => {
+  console.log('>>>', data);
+  if (data.length === 0)
+    return new MessageEmbed()
+      .setTitle('Wandering Merchant')
+      .setDescription(
+        `Spawned <t:${Math.floor(
+          spawnTime / 1000
+        )}:R> \n Awaiting votes or merchant not spawning yet`
+      );
+  else
+    return new MessageEmbed()
+      .setTitle('Wandering Merchant')
+      .setDescription(`Spawned <t:${Math.floor(spawnTime / 1000)}:R>`)
+      .addFields(await buildMerchantFields(data));
+};
+
+/**
+ * Function to return list of merchants available in an Array
+ * @param {JSON} data
+ * @returns {Array}
+ */
+const buildMerchantFields = async (data) => {
+  const IMAGE_URL = 'https://lostmerchants.com/images/zones/';
+
+  // grabs merchant json
+  const merchants = await fetch('https://lostmerchants.com/data/merchants.json');
+  const body = await merchants.json();
+
+  // transform source and return fields array
+  return data.map((merchant) => {
+    return {
+      name: `${merchant.merchantName} [${body[merchant.merchantName].Region}]`,
+      value:
+        `Location: [${merchant.activeMerchants[0].zone}](${IMAGE_URL}${encodeURIComponent(
+          merchant.activeMerchants[0].zone
+        )}.jpg) \n` +
+        `Card: ${merchant.activeMerchants[0].card.name} \n` +
+        `Rapport: ${merchant.activeMerchants[0].rarity == 4 ? '**Leggo**' : 'Epic'} \n` +
+        `Votes: ${merchant.activeMerchants[0].votes}`,
+      inline: true,
+    };
+  });
+};
+
 module.exports = {
   serverStatus,
   merchantAlerts,
+  buildMerchantEmbed,
 };
