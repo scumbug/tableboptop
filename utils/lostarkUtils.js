@@ -89,7 +89,7 @@ const embedMerchant = (details) => {
  * @param {Array} pingFlag
  * @param {Client} client
  */
-const merchantAlertsV2 = async (data, channel) => {
+const merchantAlertsV2 = async (data, channel, spawnTime) => {
   data
     .filter(
       async (merchant) =>
