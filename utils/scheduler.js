@@ -1,7 +1,8 @@
 const schedule = require('node-schedule');
-const { serverStatus, buildMerchantEmbed } = require('./lostarkUtils');
+const { serverStatus, buildMerchantEmbed, merchantAlertsV2 } = require('./lostarkUtils');
 const signalr = require('@microsoft/signalr');
 const { Client } = require('discord.js');
+const { merchantList } = require('./constants');
 
 const runScheduler = async (client) => {
   serverMonitor(client);
@@ -62,6 +63,8 @@ const merchantMonitor = async (discordClient) => {
     console.log('Start monitoring Merchant votes');
     const spawnTime = Date.now();
     const endTime = new Date(spawnTime + 24 * 60 * 1000);
+    // reset ping flags
+    let pingFlag = merchantList.map((merchant) => (merchant = { ...merchant, flag: 0 }));
 
     // Monitor votes for 24 mins every 10s
     schedule.scheduleJob({ end: endTime, rule: '*/10 * * * * *' }, async () => {
@@ -71,11 +74,12 @@ const merchantMonitor = async (discordClient) => {
           try {
             // Grab latest merchant info
             const merchantEmbed = await buildMerchantEmbed(data, spawnTime);
-
             // Update embed
             channel.messages
               .fetch({ limit: 1 })
               .then((msg) => msg.first().edit({ content: null, embeds: [merchantEmbed] }));
+            // TODO: Ping roles
+            // pingFlag = merchantAlertsV2(data, pingFlag);
           } catch (error) {
             console.log(error);
           }

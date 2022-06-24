@@ -1,7 +1,7 @@
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed, Client } = require('discord.js');
 const fetch = require('node-fetch');
 const parser = require('node-html-parser');
-const { itemList, URL_REGEX, NAME_CLASS, STATUS_CLASSES } = require('./constants');
+const { itemList, URL_REGEX, NAME_CLASS, STATUS_CLASSES, IMAGE_URL } = require('./constants');
 
 /**
  * Returns lost ark server status
@@ -83,13 +83,68 @@ const embedMerchant = (details) => {
 */
 
 /**
+ * Card Pinger Function V2
+ * @param {Array} data
+ * @param {Array} pingFlag
+ * @param {Client} client
+ * @returns {Array}
+ */
+const merchantAlertsV2 = async (data, pingFlag, client) => {
+  data
+    .filter((merchant) => merchant.activeMerchants[0].votes > 15)
+    .filter((merchant) =>
+      pingFlag.find((list) => list.merchantName === merchant.merchantName && list.flag === 0)
+    )
+    .map(async (merchant) => {
+      // check cards
+      let roles = itemList
+        .filter((item) => merchant.activeMerchants[0].card.name.includes(item.itemName))
+        .map(({ role }) => role);
+
+      // check rapport
+      if (merchant.activeMerchants[0].rapport.rarity == 4) {
+        roles = process.env.RAPPORT_ROLE + roles;
+      } else roles = roles.toString();
+
+      // start pinging process
+      if (roles.toString() !== '') {
+        // build embed
+        const embed = new MessageEmbed()
+          .setTitle(merchant.activeMerchants[0].name)
+          .setDescription(merchant.activeMerchants[0].zone)
+          .addField('Card', merchant.activeMerchants[0].card.name)
+          .addField('Rapport', merchant.activeMerchants[0].rapport.name)
+          .setImage(`${IMAGE_URL}${encodeURIComponent(merchant.activeMerchants[0].zone)}.jpg`);
+
+        // ping people
+        try {
+          const channel = client.channels.cache.get(process.env.ANN_CHN);
+
+          if (!roles) throw `WARN: Role is undefined`;
+          else
+            return await channel.send({
+              content: 'rolehere',
+              embeds: [embed],
+            });
+        } catch (error) {
+          console.log(error);
+        }
+
+        // mark merchant as pinged for the cycle
+        pingFlag.find(({ merchantName }) => merchantName === merchant.merchantName).flag = 1;
+      }
+    });
+
+  return pingFlag;
+};
+
+/**
  * Function to build full merchants listing
  * @param {Array} data
  * @param {Date} spawnTime
  * @returns {MessageEmbed}
  */
 const buildMerchantEmbed = async (data, spawnTime) => {
-  console.log('>>>', data);
   if (data.length === 0)
     return new MessageEmbed()
       .setTitle('Wandering Merchant')
@@ -111,8 +166,6 @@ const buildMerchantEmbed = async (data, spawnTime) => {
  * @returns {Array}
  */
 const buildMerchantFields = async (data) => {
-  const IMAGE_URL = 'https://lostmerchants.com/images/zones/';
-
   // grabs merchant json
   const merchants = await fetch('https://lostmerchants.com/data/merchants.json');
   const body = await merchants.json();
@@ -126,7 +179,7 @@ const buildMerchantFields = async (data) => {
           merchant.activeMerchants[0].zone
         )}.jpg) \n` +
         `Card: ${merchant.activeMerchants[0].card.name} \n` +
-        `Rapport: ${merchant.activeMerchants[0].rarity == 4 ? '**Leggo**' : 'Epic'} \n` +
+        `Rapport: ${merchant.activeMerchants[0].rapport.rarity === 4 ? '**Leggo**' : 'Epic'} \n` +
         `Votes: ${merchant.activeMerchants[0].votes}`,
       inline: true,
     };
@@ -137,4 +190,5 @@ module.exports = {
   serverStatus,
   merchantAlerts,
   buildMerchantEmbed,
+  merchantAlertsV2,
 };
