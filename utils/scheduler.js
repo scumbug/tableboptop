@@ -49,7 +49,8 @@ const merchantMonitor = async (discordClient) => {
     .withUrl('https://lostmerchants.com/MerchantHub')
     .withAutomaticReconnect()
     .build();
-  signalrClient.serverTimeoutInMilliseconds = 65000;
+  client.serverTimeoutInMilliseconds = 8 * 60 * 1000;
+  client.keepAliveIntervalInMilliseconds = 4 * 60 * 1000;
   await signalrClient.start();
 
   // setup merchant message

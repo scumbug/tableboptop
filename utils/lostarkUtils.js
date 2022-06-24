@@ -131,7 +131,7 @@ const merchantAlertsV2 = async (data, channel, spawnTime) => {
           if (!roles) throw `WARN: Role is undefined`;
           else
             await channel.send({
-              content: 'mentionrole',
+              content: roles,
               embeds: [embed],
             });
         } catch (error) {
