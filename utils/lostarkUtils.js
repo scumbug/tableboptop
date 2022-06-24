@@ -91,11 +91,7 @@ const embedMerchant = (details) => {
  */
 const merchantAlertsV2 = async (data, channel, spawnTime) => {
   data
-    .filter(
-      async (merchant) =>
-        merchant.activeMerchants[merchant.activeMerchants.length - 1].votes > 7 &&
-        (await merchantFlag.get(merchant.merchantName)) == 1
-    )
+    .filter((merchant) => merchant.activeMerchants[merchant.activeMerchants.length - 1].votes > 7)
     .map(async (merchant) => {
       // grabs merchant json
       const merchants = await fetch('https://lostmerchants.com/data/merchants.json');
@@ -114,13 +110,16 @@ const merchantAlertsV2 = async (data, channel, spawnTime) => {
       } else roles = roles.toString();
 
       // start pinging process
-      if (roles.toString() !== '') {
+      if (
+        roles.toString() !== '' &&
+        (await merchantFlag.get(merchant.merchantName)) === undefined
+      ) {
         // build embed
         const embed = new MessageEmbed()
           .setTitle(`${activeMerchant.name} [${body[activeMerchant.name].Region}]`)
           .setDescription(
             `**Location**: ${activeMerchant.zone} \n` +
-              `**Spawned: <t:${Math.floor(spawnTime / 1000)}:R> \n\n` +
+              `**Spawned**: <t:${Math.floor(spawnTime / 1000)}:R> \n\n` +
               `**Card**: ${activeMerchant.card.name} \n` +
               `**Rapport**: ${activeMerchant.rapport.rarity === 4 ? 'Leggo' : 'Epic'}`
           )
@@ -131,7 +130,7 @@ const merchantAlertsV2 = async (data, channel, spawnTime) => {
           if (!roles) throw `WARN: Role is undefined`;
           else
             await channel.send({
-              content: 'mentionrole',
+              content: roles,
               embeds: [embed],
             });
         } catch (error) {

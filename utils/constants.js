@@ -1,3 +1,4 @@
+require('dotenv').config();
 const itemList = [
   { itemName: 'Seria', role: process.env.SERIA_ROLE },
   { itemName: 'Wei', role: process.env.WEI_ROLE },
