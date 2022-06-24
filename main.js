@@ -51,13 +51,13 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-client.on('messageCreate', async (message) => {
-  // filter Saint Bot announcements
-  if (message.embeds.length && message.channelId === process.env.MCT_CHN) {
-    // Card pinger
-    merchantAlerts(message, client);
-  }
-});
+// client.on('messageCreate', async (message) => {
+//   // filter Saint Bot announcements
+//   if (message.embeds.length && message.channelId === process.env.MCT_CHN) {
+//     // Card pinger
+//     merchantAlerts(message, client);
+//   }
+// });
 
 // Login to Discord with your client's token
 client.login(process.env.TOKEN);

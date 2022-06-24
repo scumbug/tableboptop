@@ -2,6 +2,7 @@ const { MessageEmbed, Client } = require('discord.js');
 const fetch = require('node-fetch');
 const parser = require('node-html-parser');
 const { itemList, URL_REGEX, NAME_CLASS, STATUS_CLASSES, IMAGE_URL } = require('./constants');
+const { merchantFlag } = require('./helpers');
 
 /**
  * Returns lost ark server status
@@ -87,22 +88,28 @@ const embedMerchant = (details) => {
  * @param {Array} data
  * @param {Array} pingFlag
  * @param {Client} client
- * @returns {Array}
  */
-const merchantAlertsV2 = async (data, pingFlag, client) => {
+const merchantAlertsV2 = async (data, channel) => {
   data
-    .filter((merchant) => merchant.activeMerchants[0].votes > 15)
-    .filter((merchant) =>
-      pingFlag.find((list) => list.merchantName === merchant.merchantName && list.flag === 0)
+    .filter(
+      async (merchant) =>
+        merchant.activeMerchants[merchant.activeMerchants.length - 1].votes > 7 &&
+        (await merchantFlag.get(merchant.merchantName)) == 1
     )
     .map(async (merchant) => {
+      // grabs merchant json
+      const merchants = await fetch('https://lostmerchants.com/data/merchants.json');
+      const body = await merchants.json();
+
+      // assign latest active merchant
+      const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
       // check cards
       let roles = itemList
-        .filter((item) => merchant.activeMerchants[0].card.name.includes(item.itemName))
+        .filter((item) => activeMerchant.card.name.includes(item.itemName))
         .map(({ role }) => role);
 
       // check rapport
-      if (merchant.activeMerchants[0].rapport.rarity == 4) {
+      if (activeMerchant.rapport.rarity === 4) {
         roles = process.env.RAPPORT_ROLE + roles;
       } else roles = roles.toString();
 
@@ -110,32 +117,30 @@ const merchantAlertsV2 = async (data, pingFlag, client) => {
       if (roles.toString() !== '') {
         // build embed
         const embed = new MessageEmbed()
-          .setTitle(merchant.activeMerchants[0].name)
-          .setDescription(merchant.activeMerchants[0].zone)
-          .addField('Card', merchant.activeMerchants[0].card.name)
-          .addField('Rapport', merchant.activeMerchants[0].rapport.name)
-          .setImage(`${IMAGE_URL}${encodeURIComponent(merchant.activeMerchants[0].zone)}.jpg`);
+          .setTitle(`${activeMerchant.name} [${body[activeMerchant.name].Region}]`)
+          .setDescription(
+            `**Location**: ${activeMerchant.zone} \n` +
+              `**Spawned: <t:${Math.floor(spawnTime / 1000)}:R> \n\n` +
+              `**Card**: ${activeMerchant.card.name} \n` +
+              `**Rapport**: ${activeMerchant.rapport.rarity === 4 ? 'Leggo' : 'Epic'}`
+          )
+          .setImage(`${IMAGE_URL}${encodeURIComponent(activeMerchant.zone)}.jpg`);
 
         // ping people
         try {
-          const channel = client.channels.cache.get(process.env.ANN_CHN);
-
           if (!roles) throw `WARN: Role is undefined`;
           else
-            return await channel.send({
-              content: 'rolehere',
+            await channel.send({
+              content: 'mentionrole',
               embeds: [embed],
             });
         } catch (error) {
           console.log(error);
         }
-
         // mark merchant as pinged for the cycle
-        pingFlag.find(({ merchantName }) => merchantName === merchant.merchantName).flag = 1;
+        await merchantFlag.set(activeMerchant.name, 1, 30 * 60 * 1000);
       }
     });
-
-  return pingFlag;
 };
 
 /**
@@ -172,15 +177,16 @@ const buildMerchantFields = async (data) => {
 
   // transform source and return fields array
   return data.map((merchant) => {
+    const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
     return {
-      name: `${merchant.merchantName} [${body[merchant.merchantName].Region}]`,
+      name: `${activeMerchant.name} [${body[activeMerchant.name].Region}]`,
       value:
-        `Location: [${merchant.activeMerchants[0].zone}](${IMAGE_URL}${encodeURIComponent(
-          merchant.activeMerchants[0].zone
+        `Location: [${activeMerchant.zone}](${IMAGE_URL}${encodeURIComponent(
+          activeMerchant.zone
         )}.jpg) \n` +
-        `Card: ${merchant.activeMerchants[0].card.name} \n` +
-        `Rapport: ${merchant.activeMerchants[0].rapport.rarity === 4 ? '**Leggo**' : 'Epic'} \n` +
-        `Votes: ${merchant.activeMerchants[0].votes}`,
+        `Card: ${activeMerchant.card.name} \n` +
+        `Rapport: ${activeMerchant.rapport.rarity === 4 ? '**Leggo**' : 'Epic'} \n` +
+        `Votes: ${activeMerchant.votes}`,
       inline: true,
     };
   });

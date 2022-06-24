@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const Keyv = require('keyv');
 
 const dirs = (p, a = []) => {
   if (fs.statSync(p).isDirectory())
@@ -7,6 +8,9 @@ const dirs = (p, a = []) => {
   return a;
 };
 
+const merchantFlag = new Keyv(process.env.REDIS, { namespace: 'merchantFlag' });
+
 module.exports = {
   dirs,
+  merchantFlag,
 };

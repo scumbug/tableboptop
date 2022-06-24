@@ -54,17 +54,14 @@ const merchantMonitor = async (discordClient) => {
 
   // setup merchant message
   const channel = discordClient.channels.cache.get(process.env.MCTV2_CHN);
-  channel.fetch().then((channelInfo) => {
-    if (channelInfo.lastMessageId === null) channel.send('Initalizing');
-  });
 
   // Runs monitoring every :30 past the hour
   schedule.scheduleJob('30 * * * *', async () => {
     console.log('Start monitoring Merchant votes');
     const spawnTime = Date.now();
     const endTime = new Date(spawnTime + 24 * 60 * 1000);
-    // reset ping flags
-    let pingFlag = merchantList.map((merchant) => (merchant = { ...merchant, flag: 0 }));
+    // instantiate new merchant cycle message
+    const msgRef = await channel.send({ embeds: [await buildMerchantEmbed([], spawnTime)] });
 
     // Monitor votes for 24 mins every 10s
     schedule.scheduleJob({ end: endTime, rule: '*/10 * * * * *' }, async () => {
@@ -75,11 +72,9 @@ const merchantMonitor = async (discordClient) => {
             // Grab latest merchant info
             const merchantEmbed = await buildMerchantEmbed(data, spawnTime);
             // Update embed
-            channel.messages
-              .fetch({ limit: 1 })
-              .then((msg) => msg.first().edit({ content: null, embeds: [merchantEmbed] }));
-            // TODO: Ping roles
-            // pingFlag = merchantAlertsV2(data, pingFlag);
+            await msgRef.edit({ embeds: [merchantEmbed] });
+            // Ping roles
+            await merchantAlertsV2(data, channel, spawnTime);
           } catch (error) {
             console.log(error);
           }
