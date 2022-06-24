@@ -1,0 +1,63 @@
+# fly.toml file generated for tableboptop on 2022-06-24T17:58:29+08:00
+
+app = "tableboptop"
+
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = []
+
+[env]
+# Channels
+MCT_CHN = "952552366031376414"
+ANN_CHN = "900970469614833674"
+LA_CHN = "853283671569727509"
+MCTV2_CHN = "989426176504238120"
+
+# Roles
+WEI_ROLE = "<@&953626513415209030>"
+SERIA_ROLE = "<@&955088196725784626>"
+RAPPORT_ROLE = "<@&955107059169374281>"
+MADNICK_ROLE = "<@&955107029591150592>"
+KAYSARR_ROLE = "<@&971256274559844442>"
+MOKAMOKA_ROLE = "<@&971256140124020786>"
+SIAN_ROLE = "<@&955106985047638016>"
+
+LA_SERVER = "Valtan"
+FACTORYCONTAINER = "7b32d0970366"
+VAMPIRECONTAINER = "1a8cb7c7f08c"
+SAVEDIR = "/serverdata/serverfiles/.config/Epic/FactoryGame/Saved/SaveGames"
+
+
+[experimental]
+allowed_public_ports = []
+auto_rollback = true
+cmd = []
+entrypoint = []
+exec = []
+
+[[services]]
+http_checks = []
+internal_port = 8080
+processes = ["app"]
+protocol = "tcp"
+script_checks = []
+
+[services.concurrency]
+hard_limit = 25
+soft_limit = 20
+type = "connections"
+
+[[services.ports]]
+force_https = true
+handlers = ["http"]
+port = 80
+
+[[services.ports]]
+handlers = ["tls", "http"]
+port = 443
+
+[[services.tcp_checks]]
+grace_period = "1s"
+interval = "15s"
+restart_limit = 0
+timeout = "2s"
