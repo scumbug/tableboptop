@@ -12,7 +12,7 @@ const itemList = [
 
 const IMAGE_URL = 'https://lostmerchants.com/images/zones/';
 
-const MONITOR_PERIOD = 24 * 60 * 1000;
+const MONITOR_PERIOD = 26 * 60 * 1000;
 
 const NAME_CLASS = '.ags-ServerStatus-content-responses-response-server-name';
 const STATUS_CLASSES = [
