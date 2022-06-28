@@ -1,8 +1,11 @@
-const { MessageEmbed, Client } = require('discord.js');
+/* eslint-disable no-unused-vars */
+const { MessageEmbed, TextChannel } = require('discord.js');
 const fetch = require('node-fetch');
 const parser = require('node-html-parser');
-const { itemList, URL_REGEX, NAME_CLASS, STATUS_CLASSES, IMAGE_URL } = require('./constants');
-const { merchantFlag } = require('./helpers');
+const { itemList, NAME_CLASS, STATUS_CLASSES, IMAGE_URL, MONITOR_PERIOD } = require('./constants');
+const { merchantFlag, merchantData, spawnCheck } = require('./helpers');
+const merchantsInfo = require('../data/merchants.json');
+const all = require('it-all');
 
 /**
  * Returns lost ark server status
@@ -26,174 +29,124 @@ const serverStatus = async (name) => {
 };
 
 /**
- * Card Pinger Function
- * @param {Message} message
- * @param {Client} client
+ * Function to init merchants spawning in the cycle
+ * @param {number} spawnTime
+ * @returns {Promise<MessageEmbed>}
  */
-const merchantAlerts = async (message, client) => {
-  const s = message.embeds[0].description.split('\n');
+const initMerchants = async (spawnTime) => {
+  // Parse and init merchants that are spawning
+  await Promise.all(
+    Object.values(merchantsInfo)
+      .filter((merchant) =>
+        merchant.AppearanceTimes.some((timeStr) => spawnCheck(spawnTime, timeStr))
+      )
+      .map(async (merchant_1) => {
+        await merchantData.set(merchant_1.Name, {
+          merchantName: merchant_1.Name,
+          Region: merchant_1.Region,
+          activeMerchants: [],
+        });
+      })
+  );
+  return await buildMerchantEmbed(spawnTime);
+};
 
-  // build embed payload
-  const details = {
-    item: s[s.findIndex((l) => l.includes('**Item**')) + 1].slice(0, -3),
-    location: s.find((l) => l.includes('**Location**')),
-    spawned: s.find((l) => l.includes('**Spawned**')),
-    orig: message.url,
-  };
+/**
+ * Function to build full merchant listing
+ * @param {number} spawnTime
+ * @returns {Promise<MessageEmbed>}
+ */
+const buildMerchantEmbed = async (spawnTime) => {
+  return new MessageEmbed()
+    .setTitle('Wandering Merchant')
+    .setDescription(`Spawned <t:${Math.floor(spawnTime / 1000)}:R>`)
+    .addFields(await buildMerchantFields());
+};
 
-  // add map img to payload
-  details.image = details.location.match(URL_REGEX)[0];
+/**
+ * Helper Function to build embed fields array
+ * @returns {Promise<Array>}
+ */
+const buildMerchantFields = () => {
+  return all(merchantData.iterator()).then((merchants) =>
+    merchants.map((merchant) => {
+      const activeMerchant = merchant[1].activeMerchants.slice(-1)[0];
+      return {
+        name: `${merchant[1].merchantName} [${merchant[1].Region}]`,
+        value:
+          `Location: ${
+            activeMerchant
+              ? `[${activeMerchant.zone}](${
+                  IMAGE_URL + encodeURIComponent(activeMerchant.zone) + '.jpg'
+                })`
+              : '?'
+          } \n` +
+          `Card: ${activeMerchant ? activeMerchant.card.name : '?'} \n` +
+          `Rapport: ${
+            activeMerchant ? (activeMerchant.rapport.rarity === 4 ? '**Leggo**' : 'Epic') : '?'
+          } \n` +
+          `Votes: ${activeMerchant ? activeMerchant.votes : '?'}`,
+        inline: true,
+      };
+    })
+  );
+};
 
-  // log pings
-  console.log(`INFO: ${details.item} popped`);
+/**
+ * Card Pinger Function V3
+ * @param {Array} data
+ * @param {TextChannel} channel
+ * @param {number} spawnTime
+ */
+const merchantAlerts = async (merchant, channel, spawnTime) => {
+  // start ETL and ping process
+  if ((await merchantFlag.get(merchant.merchantName)) === undefined) {
+    // assign latest active merchant
+    const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
+    // check cards
+    let roles = itemList
+      .filter((item) => activeMerchant.card.name.includes(item.itemName))
+      .map(({ role }) => role);
 
-  try {
-    const channel = client.channels.cache.get(process.env.ANN_CHN);
+    // check rapport
+    if (activeMerchant.rapport.rarity === 4) {
+      roles = process.env.RAPPORT_ROLE + roles;
+    } else roles = roles.toString();
 
-    const role = itemList
-      .filter((item) => details.item.includes(item.itemName))
-      .map(({ role }) => role)
-      .join('');
+    // start pinging process
+    if (roles !== '') {
+      // build embed
+      const embed = new MessageEmbed()
+        .setTitle(`${activeMerchant.name} [${merchantsInfo[activeMerchant.name].Region}]`)
+        .setDescription(
+          `**Location**: ${activeMerchant.zone} \n` +
+            `**Spawned**: <t:${Math.floor(spawnTime / 1000)}:R> \n\n` +
+            `**Card**: ${activeMerchant.card.name} \n` +
+            `**Rapport**: ${activeMerchant.rapport.rarity === 4 ? 'Leggo' : 'Epic'}`
+        )
+        .setImage(`${IMAGE_URL}${encodeURIComponent(activeMerchant.zone)}.jpg`);
 
-    if (!role) throw `WARN: Role for ${details.item} is undefined`;
-    else
-      return await channel.send({
-        content: role,
-        embeds: [embedMerchant(details)],
-      });
-  } catch (error) {
-    console.log(error);
+      // ping people
+      try {
+        if (!roles) throw `WARN: Role is undefined`;
+        else
+          await channel.send({
+            content: roles,
+            embeds: [embed],
+          });
+      } catch (error) {
+        console.log(error);
+      }
+      // mark merchant as pinged for the cycle
+      await merchantFlag.set(activeMerchant.name, 1, spawnTime + MONITOR_PERIOD - Date.now());
+    }
   }
 };
 
-/**
- * Function to embed merchant messages in discord message
- * @param {Object} details
- * @returns {MessageEmbed}
- */
-const embedMerchant = (details) => {
-  return new MessageEmbed()
-    .setTitle(details.item)
-    .setImage(details.image)
-    .setDescription(`${details.location}\n ${details.spawned}`)
-    .addField('More Details', details.orig, true);
-};
-
-/*
-  Lost Ark Merchant Alerts V2
-*/
-
-/**
- * Card Pinger Function V2
- * @param {Array} data
- * @param {Array} pingFlag
- * @param {Client} client
- */
-const merchantAlertsV2 = async (data, channel, spawnTime) => {
-  data
-    .filter((merchant) => merchant.activeMerchants[merchant.activeMerchants.length - 1].votes > 7)
-    .map(async (merchant) => {
-      // grabs merchant json
-      const merchants = await fetch('https://lostmerchants.com/data/merchants.json');
-      const body = await merchants.json();
-
-      // assign latest active merchant
-      const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
-      // check cards
-      let roles = itemList
-        .filter((item) => activeMerchant.card.name.includes(item.itemName))
-        .map(({ role }) => role);
-
-      // check rapport
-      if (activeMerchant.rapport.rarity === 4) {
-        roles = process.env.RAPPORT_ROLE + roles;
-      } else roles = roles.toString();
-
-      // start pinging process
-      if (
-        roles.toString() !== '' &&
-        (await merchantFlag.get(merchant.merchantName)) === undefined
-      ) {
-        // build embed
-        const embed = new MessageEmbed()
-          .setTitle(`${activeMerchant.name} [${body[activeMerchant.name].Region}]`)
-          .setDescription(
-            `**Location**: ${activeMerchant.zone} \n` +
-              `**Spawned**: <t:${Math.floor(spawnTime / 1000)}:R> \n\n` +
-              `**Card**: ${activeMerchant.card.name} \n` +
-              `**Rapport**: ${activeMerchant.rapport.rarity === 4 ? 'Leggo' : 'Epic'}`
-          )
-          .setImage(`${IMAGE_URL}${encodeURIComponent(activeMerchant.zone)}.jpg`);
-
-        // ping people
-        try {
-          if (!roles) throw `WARN: Role is undefined`;
-          else
-            await channel.send({
-              content: roles,
-              embeds: [embed],
-            });
-        } catch (error) {
-          console.log(error);
-        }
-        // mark merchant as pinged for the cycle
-        await merchantFlag.set(activeMerchant.name, 1, 30 * 60 * 1000);
-      }
-    });
-};
-
-/**
- * Function to build full merchants listing
- * @param {Array} data
- * @param {Date} spawnTime
- * @returns {MessageEmbed}
- */
-const buildMerchantEmbed = async (data, spawnTime) => {
-  if (data.length === 0)
-    return new MessageEmbed()
-      .setTitle('Wandering Merchant')
-      .setDescription(
-        `Spawned <t:${Math.floor(
-          spawnTime / 1000
-        )}:R> \n Awaiting votes or merchant not spawning yet`
-      );
-  else
-    return new MessageEmbed()
-      .setTitle('Wandering Merchant')
-      .setDescription(`Spawned <t:${Math.floor(spawnTime / 1000)}:R>`)
-      .addFields(await buildMerchantFields(data));
-};
-
-/**
- * Function to return list of merchants available in an Array
- * @param {JSON} data
- * @returns {Array}
- */
-const buildMerchantFields = async (data) => {
-  // grabs merchant json
-  const merchants = await fetch('https://lostmerchants.com/data/merchants.json');
-  const body = await merchants.json();
-
-  // transform source and return fields array
-  return data.map((merchant) => {
-    const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
-    return {
-      name: `${activeMerchant.name} [${body[activeMerchant.name].Region}]`,
-      value:
-        `Location: [${activeMerchant.zone}](${IMAGE_URL}${encodeURIComponent(
-          activeMerchant.zone
-        )}.jpg) \n` +
-        `Card: ${activeMerchant.card.name} \n` +
-        `Rapport: ${activeMerchant.rapport.rarity === 4 ? '**Leggo**' : 'Epic'} \n` +
-        `Votes: ${activeMerchant.votes}`,
-      inline: true,
-    };
-  });
-};
-
 module.exports = {
+  initMerchants,
   serverStatus,
-  merchantAlerts,
   buildMerchantEmbed,
-  merchantAlertsV2,
+  merchantAlerts,
+  buildMerchantFields,
 };

@@ -2,7 +2,6 @@
 const { Client, Intents, Collection } = require('discord.js');
 const { dirs } = require('./utils/helpers');
 const http = require('http');
-const { merchantAlerts } = require('./utils/lostarkUtils');
 const { runScheduler } = require('./utils/scheduler');
 
 require('dotenv').config();
@@ -50,14 +49,6 @@ client.on('interactionCreate', async (interaction) => {
     });
   }
 });
-
-// client.on('messageCreate', async (message) => {
-//   // filter Saint Bot announcements
-//   if (message.embeds.length && message.channelId === process.env.MCT_CHN) {
-//     // Card pinger
-//     merchantAlerts(message, client);
-//   }
-// });
 
 // Login to Discord with your client's token
 client.login(process.env.TOKEN);

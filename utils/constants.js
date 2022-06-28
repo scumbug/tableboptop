@@ -10,28 +10,9 @@ const itemList = [
   { itemName: 'No Good Items', role: undefined },
 ];
 
-const merchantList = [
-  { merchantName: 'Lucas' },
-  { merchantName: 'Morris' },
-  { merchantName: 'Mac' },
-  { merchantName: 'Jeffery' },
-  { merchantName: 'Dorella' },
-  { merchantName: 'Malone' },
-  { merchantName: 'Burt' },
-  { merchantName: 'Oliver' },
-  { merchantName: 'Nox' },
-  { merchantName: 'Aricer' },
-  { merchantName: 'Rayni' },
-  { merchantName: 'Ben' },
-  { merchantName: 'Peter' },
-  { merchantName: 'Laitir' },
-  { merchantName: 'Evan' },
-];
-
 const IMAGE_URL = 'https://lostmerchants.com/images/zones/';
 
-const URL_REGEX =
-  /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/;
+const MONITOR_PERIOD = 24 * 60 * 1000;
 
 const NAME_CLASS = '.ags-ServerStatus-content-responses-response-server-name';
 const STATUS_CLASSES = [
@@ -43,9 +24,8 @@ const STATUS_CLASSES = [
 
 module.exports = {
   itemList,
-  merchantList,
-  URL_REGEX,
   NAME_CLASS,
   STATUS_CLASSES,
   IMAGE_URL,
+  MONITOR_PERIOD,
 };
