@@ -100,46 +100,44 @@ const buildMerchantFields = () => {
  */
 const merchantAlerts = async (merchant, channel, spawnTime) => {
   // start ETL and ping process
-  if ((await merchantFlag.get(merchant.merchantName)) === undefined) {
-    // assign latest active merchant
-    const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
-    // check cards
-    let roles = itemList
-      .filter((item) => activeMerchant.card.name.includes(item.itemName))
-      .map(({ role }) => role);
+  // assign latest active merchant
+  const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
+  // check cards
+  let roles = itemList
+    .filter((item) => activeMerchant.card.name.includes(item.itemName))
+    .map(({ role }) => role);
 
-    // check rapport
-    if (activeMerchant.rapport.rarity === 4) {
-      roles = process.env.RAPPORT_ROLE + roles;
-    } else roles = roles.toString();
+  // check rapport
+  if (activeMerchant.rapport.rarity === 4) {
+    roles = process.env.RAPPORT_ROLE + roles;
+  } else roles = roles.toString();
 
-    // start pinging process
-    if (roles !== '') {
-      // build embed
-      const embed = new MessageEmbed()
-        .setTitle(`${activeMerchant.name} [${merchantsInfo[activeMerchant.name].Region}]`)
-        .setDescription(
-          `**Location**: ${activeMerchant.zone} \n` +
-            `**Spawned**: <t:${Math.floor(spawnTime / 1000)}:R> \n\n` +
-            `**Card**: ${activeMerchant.card.name} \n` +
-            `**Rapport**: ${activeMerchant.rapport.rarity === 4 ? 'Leggo' : 'Epic'}`
-        )
-        .setImage(`${IMAGE_URL}${encodeURIComponent(activeMerchant.zone)}.jpg`);
+  // start pinging process
+  if (roles !== '') {
+    // build embed
+    const embed = new MessageEmbed()
+      .setTitle(`${activeMerchant.name} [${merchantsInfo[activeMerchant.name].Region}]`)
+      .setDescription(
+        `**Location**: ${activeMerchant.zone} \n` +
+          `**Spawned**: <t:${Math.floor(spawnTime / 1000)}:R> \n\n` +
+          `**Card**: ${activeMerchant.card.name} \n` +
+          `**Rapport**: ${activeMerchant.rapport.rarity === 4 ? 'Leggo' : 'Epic'}`
+      )
+      .setImage(`${IMAGE_URL}${encodeURIComponent(activeMerchant.zone)}.jpg`);
 
-      // ping people
-      try {
-        if (!roles) throw `WARN: Role is undefined`;
-        else
-          await channel.send({
-            content: roles,
-            embeds: [embed],
-          });
-      } catch (error) {
-        console.log(error);
-      }
-      // mark merchant as pinged for the cycle
-      await merchantFlag.set(activeMerchant.name, 1, spawnTime + MONITOR_PERIOD - Date.now());
+    // ping people
+    try {
+      if (!roles) throw `WARN: Role is undefined`;
+      else
+        await channel.send({
+          content: roles,
+          embeds: [embed],
+        });
+    } catch (error) {
+      console.log(error);
     }
+    // mark merchant as pinged for the cycle
+    await merchantFlag.set(activeMerchant.name, 1, spawnTime + MONITOR_PERIOD - Date.now());
   }
 };
 

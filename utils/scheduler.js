@@ -111,6 +111,29 @@ const merchantMonitor = async (discordClient) => {
       await msgRef.edit({ embeds: [await buildMerchantEmbed(spawnTime)] });
     });
 
+    // Repopulate db on connection lost
+    signalrClient.onreconnected(async () => {
+      // Grab active merchants
+      const activeMerchants = await signalrClient.invoke(
+        'GetKnownActiveMerchantGroups',
+        process.env.LA_SERVER
+      );
+
+      if (activeMerchants.length > 0) {
+        Promise.all(
+          activeMerchants.map(async (activeMerchant) => {
+            await merchantData.set(
+              activeMerchant.merchantName,
+              activeMerchant,
+              endTime - Date.now()
+            );
+          })
+        );
+      }
+
+      await msgRef.edit({ embeds: [await buildMerchantEmbed(spawnTime)] });
+    });
+
     await signalrClient.start();
     await signalrClient.invoke('SubscribeToServer', process.env.LA_SERVER);
   });
