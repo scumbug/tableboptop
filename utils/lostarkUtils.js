@@ -30,7 +30,7 @@ const serverStatus = async (name) => {
 
 /**
  * Function to init merchants spawning in the cycle
- * @param {number} spawnTime
+ * @param {Date} spawnTime
  * @returns {Promise<MessageEmbed>}
  */
 const initMerchants = async (spawnTime) => {

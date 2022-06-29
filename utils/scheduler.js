@@ -57,12 +57,14 @@ const merchantMonitor = async (discordClient) => {
     .withUrl('https://lostmerchants.com/MerchantHub')
     .withAutomaticReconnect()
     .build();
-  signalrClient.serverTimeoutInMilliseconds = 8 * 60 * 1000;
+  signalrClient.serverTimeoutInMilliseconds = 15 * 60 * 1000;
   signalrClient.keepAliveIntervalInMilliseconds = 1 * 60 * 1000;
 
   // stops signalr after a cycle
   schedule.scheduleJob('55 * * * *', async () => {
     try {
+      await signalrClient.off('UpdateMerchantGroup');
+      await signalrClient.off('UpdateVotes');
       await signalrClient.stop();
     } catch (error) {
       console.log('Signalr client not running');
@@ -74,24 +76,18 @@ const merchantMonitor = async (discordClient) => {
     // setup monitoring
     const channel = discordClient.channels.cache.get(process.env.MCTV2_CHN);
     const spawnTime = Date.now();
-    const endTime = new Date(spawnTime + MONITOR_PERIOD);
+    const endTime = spawnTime + MONITOR_PERIOD;
 
     // instantiate new merchant cycle message
     const msgRef = await channel.send({ embeds: [await initMerchants(new Date(spawnTime))] });
 
     // start listening to data from lostmerchants
     console.log('Start monitoring Merchant votes');
-    await signalrClient.start();
-    await signalrClient.invoke('SubscribeToServer', process.env.LA_SERVER);
 
     // Monitor inc merchant, push to db, update embed
     signalrClient.on('UpdateMerchantGroup', async (_server, merchant) => {
       const curr = await merchantData.get(merchant.merchantName);
-      await merchantData.set(
-        merchant.merchantName,
-        { ...curr, ...merchant },
-        spawnTime + MONITOR_PERIOD - Date.now()
-      );
+      await merchantData.set(merchant.merchantName, { ...curr, ...merchant }, endTime - Date.now());
       await msgRef.edit({ embeds: [await buildMerchantEmbed(spawnTime)] });
     });
 
@@ -114,6 +110,9 @@ const merchantMonitor = async (discordClient) => {
       );
       await msgRef.edit({ embeds: [await buildMerchantEmbed(spawnTime)] });
     });
+
+    await signalrClient.start();
+    await signalrClient.invoke('SubscribeToServer', process.env.LA_SERVER);
   });
 };
 
