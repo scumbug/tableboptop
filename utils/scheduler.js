@@ -14,7 +14,7 @@ const all = require('it-all');
 const { Client } = require('discord.js');
 
 const runScheduler = (client) => {
-  //serverMonitor(client);
+  serverMonitor(client);
   merchantMonitor(client);
 };
 
