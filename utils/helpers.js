@@ -17,6 +17,10 @@ const spawnCheck = (t1, tStr) => {
   return t2.getHours() == t1.getHours() && t2.getMinutes() == t1.getMinutes();
 };
 
+const isSpawnCycle = (time) => {
+  return time.getMinutes() > 30 && time.getMinutes() < 55;
+};
+
 // Redis Datastore
 const merchantData = new Keyv(process.env.REDIS, {
   namespace: 'merchantData',
@@ -29,4 +33,5 @@ module.exports = {
   merchantFlag,
   merchantData,
   spawnCheck,
+  isSpawnCycle,
 };

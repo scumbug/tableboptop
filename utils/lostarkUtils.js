@@ -33,7 +33,7 @@ const serverStatus = async (name) => {
  * @param {Date} spawnTime
  * @returns {Promise<MessageEmbed>}
  */
-const initMerchants = async (spawnTime) => {
+const initMerchants = async (spawnTime, activeMerchants) => {
   // Parse and init merchants that are spawning
   await Promise.all(
     Object.values(merchantsInfo)
@@ -48,6 +48,10 @@ const initMerchants = async (spawnTime) => {
         });
       })
   );
+  // Populate merchants with data if exists
+  if (activeMerchants.length > 0) {
+    await populateMerchants(activeMerchants, MONITOR_PERIOD);
+  }
   return await buildMerchantEmbed(spawnTime);
 };
 
@@ -141,10 +145,25 @@ const merchantAlerts = async (merchant, channel, spawnTime) => {
   }
 };
 
+/**
+ * Populate db with known merchants
+ * @param {Object} activeMerchants
+ * @param {number} ttl
+ */
+const populateMerchants = async (activeMerchants, ttl) => {
+  await Promise.all(
+    activeMerchants.map(async (activeMerchant) => {
+      const curr = await merchantData.get(activeMerchant.merchantName);
+      await merchantData.set(activeMerchant.merchantName, { ...curr, ...activeMerchant }, ttl);
+    })
+  );
+};
+
 module.exports = {
   initMerchants,
   serverStatus,
   buildMerchantEmbed,
   merchantAlerts,
   buildMerchantFields,
+  populateMerchants,
 };

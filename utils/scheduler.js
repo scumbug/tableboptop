@@ -5,15 +5,16 @@ const {
   initMerchants,
   buildMerchantEmbed,
   merchantAlerts,
+  populateMerchants,
 } = require('./lostarkUtils');
 const signalr = require('@microsoft/signalr');
 const { MONITOR_PERIOD } = require('./constants');
-const { merchantData, merchantFlag } = require('./helpers');
+const { merchantData, merchantFlag, isSpawnCycle } = require('./helpers');
 const all = require('it-all');
 const { Client } = require('discord.js');
 
 const runScheduler = (client) => {
-  serverMonitor(client);
+  //serverMonitor(client);
   merchantMonitor(client);
 };
 
@@ -42,7 +43,7 @@ const serverMonitor = (client) => {
       // set new status
       client.user.setActivity(`Lost Ark | ${process.env.LA_SERVER}: ${status}`);
     } catch (error) {
-      console.log('Status not available, checking again in 1 min');
+      console.warn('Status not available, checking again in 1 min');
     }
   });
 };
@@ -72,20 +73,19 @@ const merchantMonitor = async (discordClient) => {
   });
 
   // Runs monitoring every :30 past the hour
-  schedule.scheduleJob('30 * * * *', async () => {
+  const monitorJob = schedule.scheduleJob('30 * * * *', async () => {
     // setup monitoring
     const channel = discordClient.channels.cache.get(process.env.MCTV2_CHN);
-    const spawnTime = Date.now();
+    const spawnTime = new Date().setMinutes(30);
     const endTime = spawnTime + MONITOR_PERIOD;
+    console.log(`New spawn cycle started at: ${new Date(spawnTime)}`);
+    console.log(`Cycle will end at: ${new Date(endTime)}`);
 
-    // instantiate new merchant cycle message
-    const msgRef = await channel.send({ embeds: [await initMerchants(new Date(spawnTime))] });
-
-    // start listening to data from lostmerchants
-    console.log('Start monitoring Merchant votes');
+    // Register Handlers
 
     // Monitor inc merchant, push to db, update embed
     signalrClient.on('UpdateMerchantGroup', async (_server, merchant) => {
+      console.log('Received merchant group');
       const curr = await merchantData.get(merchant.merchantName);
       await merchantData.set(merchant.merchantName, { ...curr, ...merchant }, endTime - Date.now());
       await msgRef.edit({ embeds: [await buildMerchantEmbed(spawnTime)] });
@@ -93,6 +93,7 @@ const merchantMonitor = async (discordClient) => {
 
     // Monitor inc votes, push to db, update embed, ping roles
     signalrClient.on('UpdateVotes', async (votes) => {
+      console.log('Received votes');
       Promise.all(
         votes.map(async (vote) => {
           (await all(merchantData.iterator())).map(async (merchant) => {
@@ -113,30 +114,42 @@ const merchantMonitor = async (discordClient) => {
 
     // Repopulate db on connection lost
     signalrClient.onreconnected(async () => {
+      console.log('Signalr reconnected, refreshing merchants');
       // Grab active merchants
       const activeMerchants = await signalrClient.invoke(
         'GetKnownActiveMerchantGroups',
         process.env.LA_SERVER
       );
 
-      if (activeMerchants.length > 0) {
-        Promise.all(
-          activeMerchants.map(async (activeMerchant) => {
-            await merchantData.set(
-              activeMerchant.merchantName,
-              activeMerchant,
-              endTime - Date.now()
-            );
-          })
-        );
-      }
+      if (activeMerchants.length > 0)
+        await populateMerchants(activeMerchants, endTime - Date.now());
 
       await msgRef.edit({ embeds: [await buildMerchantEmbed(spawnTime)] });
     });
 
+    // start listening to data from lostmerchants
+    console.log('Start listening');
     await signalrClient.start();
     await signalrClient.invoke('SubscribeToServer', process.env.LA_SERVER);
+
+    // get known merchants
+    const activeMerchants = await signalrClient.invoke(
+      'GetKnownActiveMerchantGroups',
+      process.env.LA_SERVER
+    );
+
+    // instantiate new merchant cycle message
+    const msgRef = await channel.send({
+      embeds: [await initMerchants(new Date(spawnTime), activeMerchants)],
+    });
   });
+
+  // start merchant monitoring immediately if bot starts within spawn cycle
+  console.log(isSpawnCycle(new Date()));
+  if (isSpawnCycle(new Date())) {
+    console.log('Bot started within spawn cycle, manually invoking job');
+    monitorJob.invoke();
+  }
 };
 
 module.exports = {
