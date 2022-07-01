@@ -114,6 +114,7 @@ const merchantMonitor = async (discordClient) => {
 
     // Repopulate db on connection lost
     signalrClient.onreconnected(async () => {
+      console.log(endTime);
       console.log('Signalr reconnected, refreshing merchants');
       // Grab active merchants
       const activeMerchants = await signalrClient.invoke(
