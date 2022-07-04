@@ -74,7 +74,7 @@ const buildMerchantEmbed = async (spawnTime) => {
 const buildMerchantFields = () => {
   return all(merchantData.iterator()).then((merchants) =>
     merchants.map((merchant) => {
-      const activeMerchant = merchant[1].activeMerchants.slice(-1)[0];
+      const activeMerchant = merchant[1].activeMerchants[0];
       return {
         name: `${merchant[1].merchantName} [${merchant[1].Region}]`,
         value:
@@ -105,7 +105,7 @@ const buildMerchantFields = () => {
 const merchantAlerts = async (merchant, channel, spawnTime) => {
   // start ETL and ping process
   // assign latest active merchant
-  const activeMerchant = merchant.activeMerchants[merchant.activeMerchants.length - 1];
+  const activeMerchant = merchant.activeMerchants[0];
   // check cards
   let roles = itemList
     .filter((item) => activeMerchant.card.name.includes(item.itemName))

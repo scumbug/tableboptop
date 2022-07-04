@@ -3,6 +3,7 @@ const path = require('path');
 const Keyv = require('keyv');
 const { parse } = require('date-fns');
 const { MONITOR_PERIOD } = require('./constants');
+const all = require('it-all');
 
 require('dotenv').config();
 
@@ -27,6 +28,14 @@ const merchantData = new Keyv(process.env.REDIS, {
   ttl: MONITOR_PERIOD,
 });
 const merchantFlag = new Keyv(process.env.REDIS, { namespace: 'merchantFlag' });
+const merchantConf = new Keyv(process.env.REDIS, {
+  namespace: 'merchantConf',
+  ttl: MONITOR_PERIOD,
+});
+
+const getMerchantConfs = async () => {
+  return (await all(merchantConf.iterator())).reduce((a, [b, c]) => ((a[b] = c), a), {});
+};
 
 module.exports = {
   dirs,
@@ -34,4 +43,6 @@ module.exports = {
   merchantData,
   spawnCheck,
   isSpawnCycle,
+  merchantConf,
+  getMerchantConfs,
 };
