@@ -14,6 +14,7 @@ const {
   isSpawnCycle,
   merchantConf,
   getMerchantConfs,
+  sortActiveMerchants,
 } = require('./helpers');
 const all = require('it-all');
 const { Client } = require('discord.js');
@@ -72,40 +73,48 @@ const merchantMonitor = async (discordClient) => {
   // Register Handlers
   // Monitor inc merchant, push to db, update embed
   signalrClient.on('UpdateMerchantGroup', async (_server, merchant) => {
-    console.log('Received merchant group');
-    const merchantConf = await getMerchantConfs();
-    const curr = await merchantData.get(merchant.merchantName);
-    await merchantData.set(
-      merchant.merchantName,
-      { ...curr, ...merchant },
-      merchantConf.endTime - Date.now()
-    );
-    const msgRef = await channel.messages.fetch(merchantConf.msgRef);
-    await msgRef.edit({ embeds: [await buildMerchantEmbed(merchantConf.spawnTime)] });
+    try {
+      console.log('Received merchant group');
+      const merchantConf = await getMerchantConfs();
+      const curr = await merchantData.get(merchant.merchantName);
+      await merchantData.set(
+        merchant.merchantName,
+        { ...curr, ...merchant },
+        merchantConf.endTime - Date.now()
+      );
+      const msgRef = await channel.messages.fetch(merchantConf.msgRef);
+      await msgRef.edit({ embeds: [await buildMerchantEmbed(merchantConf.spawnTime)] });
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   // Monitor inc votes, push to db, update embed, ping roles
   signalrClient.on('UpdateVotes', async (votes) => {
-    console.log('Received votes');
-    const merchantConf = await getMerchantConfs();
-    Promise.all(
-      votes.map(async (vote) => {
-        (await all(merchantData.iterator())).map(async (merchant) => {
-          const activeMerchant = merchant[1].activeMerchants.slice(-1)[0];
-          if (activeMerchant && activeMerchant.id === vote.id) {
-            activeMerchant.votes = vote.votes;
-            await merchantData.set(merchant[0], merchant[1], merchantConf.endTime - Date.now());
+    try {
+      console.log('Received votes');
+      const merchantConf = await getMerchantConfs();
+      Promise.all(
+        votes.map(async (vote) => {
+          (await all(merchantData.iterator())).map(async (merchant) => {
+            const activeMerchant = merchant[1].activeMerchants.sort(sortActiveMerchants)[0];
+            if (activeMerchant && activeMerchant.id === vote.id) {
+              activeMerchant.votes = vote.votes;
+              await merchantData.set(merchant[0], merchant[1], merchantConf.endTime - Date.now());
 
-            // ping roles
-            if ((await merchantFlag.get(merchant[0])) === undefined && vote.votes > 7)
-              await merchantAlerts(merchant[1], channel, merchantConf.spawnTime);
-          }
-        });
-      })
-    );
-    const msgRef = await channel.messages.fetch(merchantConf.msgRef);
+              // ping roles
+              if ((await merchantFlag.get(merchant[0])) === undefined && vote.votes > 7)
+                await merchantAlerts(merchant[1], channel, merchantConf.spawnTime);
+            }
+          });
+        })
+      );
+      const msgRef = await channel.messages.fetch(merchantConf.msgRef);
 
-    await msgRef.edit({ embeds: [await buildMerchantEmbed(merchantConf.spawnTime)] });
+      await msgRef.edit({ embeds: [await buildMerchantEmbed(merchantConf.spawnTime)] });
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   // Repopulate db on connection lost

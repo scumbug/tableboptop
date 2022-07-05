@@ -3,7 +3,7 @@ const { MessageEmbed, TextChannel } = require('discord.js');
 const fetch = require('node-fetch');
 const parser = require('node-html-parser');
 const { itemList, NAME_CLASS, STATUS_CLASSES, IMAGE_URL, MONITOR_PERIOD } = require('./constants');
-const { merchantFlag, merchantData, spawnCheck } = require('./helpers');
+const { merchantFlag, merchantData, spawnCheck, sortActiveMerchants } = require('./helpers');
 const merchantsInfo = require('../data/merchants.json');
 const all = require('it-all');
 
@@ -74,7 +74,7 @@ const buildMerchantEmbed = async (spawnTime) => {
 const buildMerchantFields = () => {
   return all(merchantData.iterator()).then((merchants) =>
     merchants.map((merchant) => {
-      const activeMerchant = merchant[1].activeMerchants.slice(-1)[0];
+      const activeMerchant = merchant[1].activeMerchants.sort(sortActiveMerchants)[0];
       return {
         name: `${merchant[1].merchantName} [${merchant[1].Region}]`,
         value:
@@ -105,7 +105,7 @@ const buildMerchantFields = () => {
 const merchantAlerts = async (merchant, channel, spawnTime) => {
   // start ETL and ping process
   // assign latest active merchant
-  const activeMerchant = merchant.activeMerchants.slice(-1)[0];
+  const activeMerchant = merchant.activeMerchants.sort(sortActiveMerchants)[0];
   // check cards
   let roles = itemList
     .filter((item) => activeMerchant.card.name.includes(item.itemName))

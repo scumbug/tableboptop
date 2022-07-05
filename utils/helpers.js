@@ -22,6 +22,10 @@ const isSpawnCycle = (time) => {
   return time.getMinutes() > 30 && time.getMinutes() < 55;
 };
 
+const sortActiveMerchants = (a, b) => {
+  return b.Votes - a.Votes;
+};
+
 // Redis Datastore
 const merchantData = new Keyv(process.env.REDIS, {
   namespace: 'merchantData',
@@ -45,4 +49,5 @@ module.exports = {
   isSpawnCycle,
   merchantConf,
   getMerchantConfs,
+  sortActiveMerchants,
 };
