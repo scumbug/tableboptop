@@ -91,7 +91,7 @@ const merchantMonitor = async (discordClient) => {
     Promise.all(
       votes.map(async (vote) => {
         (await all(merchantData.iterator())).map(async (merchant) => {
-          const activeMerchant = merchant[1].activeMerchants[0];
+          const activeMerchant = merchant[1].activeMerchants.slice(-1)[0];
           if (activeMerchant && activeMerchant.id === vote.id) {
             activeMerchant.votes = vote.votes;
             await merchantData.set(merchant[0], merchant[1], merchantConf.endTime - Date.now());
