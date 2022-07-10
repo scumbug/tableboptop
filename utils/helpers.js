@@ -23,7 +23,7 @@ const isSpawnCycle = (time) => {
 };
 
 const sortActiveMerchants = (a, b) => {
-  return b.Votes - a.Votes;
+  return b.votes - a.votes;
 };
 
 // Redis Datastore
