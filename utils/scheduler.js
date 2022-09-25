@@ -18,16 +18,13 @@ const {
 } = require('./helpers');
 const all = require('it-all');
 const { Client } = require('discord.js');
-const { wowrealmStatus } = require('./blizzUtils')
+const { wowRealmStatus } = require('./blizzUtils');
 
 const runScheduler = (client) => {
   serverMonitor(client);
   merchantMonitor(client);
   wowServerMonitor(client);
 };
-
-//Initialise global variable for wow server status
-var wowServerStatus = ""
 
 /**
  * Cronjob to monitor server uptime
@@ -176,37 +173,35 @@ const merchantMonitor = async (discordClient) => {
   }
 };
 
-
 /**
  * Cronjob to Monitor WoW Server Status
- * @param {Client} discordClient
+ * @param {Client} client
  */
 const wowServerMonitor = (client) => {
+  //Initialise global variable for wow server status
+  let wowServerStatus = '';
+
   schedule.scheduleJob('*/1 * * * *', async () => {
     try {
+      const wowApiRes = await wowRealmStatus(process.env.FROSTMOURNE);
 
-      //Frostmourne realm id is 3725
-      const wowrealmstatus = await wowrealmStatus(3725)
-
-      if(wowServerStatus == ""){
-        wowServerStatus = wowrealmstatus.data.status.name
-        console.log("Wow Status init")
-        return
-      }else if(wowServerStatus == wowrealmstatus.data.status.name){
-        return
-      }else{
-        wowServerStatus = wowrealmstatus.data.status.name
+      if (wowServerStatus === '') {
+        wowServerStatus = wowApiRes.data.status.name;
+        console.log('Wow Status init');
+        return;
+      } else if (wowServerStatus === wowApiRes.data.status.name) {
+        return;
+      } else {
+        wowServerStatus = wowApiRes.data.status.name;
         const channel = client.channels.cache.get(process.env.BLIZZ_CHN);
-        await channel.send(wowrealmstatus.data.realms[0].name + ' is ' + wowrealmstatus.data.status.name)
+        await channel.send(wowApiRes.data.realms[0].name + ' is ' + wowApiRes.data.status.name);
       }
-
     } catch (error) {
       console.warn('Cannot get WoW Server info, trying again in 1 minute');
       console.warn(error);
     }
   });
 };
-
 
 module.exports = {
   runScheduler,
