@@ -18,11 +18,16 @@ const {
 } = require('./helpers');
 const all = require('it-all');
 const { Client } = require('discord.js');
+const { wowrealmStatus } = require('./blizzUtils')
 
 const runScheduler = (client) => {
   serverMonitor(client);
   merchantMonitor(client);
+  wowServerMonitor(client);
 };
+
+//Initialise global variable for wow server status
+var wowServerStatus = ""
 
 /**
  * Cronjob to monitor server uptime
@@ -170,6 +175,38 @@ const merchantMonitor = async (discordClient) => {
     initMerchantJob.invoke();
   }
 };
+
+
+/**
+ * Cronjob to Monitor WoW Server Status
+ * @param {Client} discordClient
+ */
+const wowServerMonitor = (client) => {
+  schedule.scheduleJob('*/1 * * * *', async () => {
+    try {
+
+      //Frostmourne realm id is 3725
+      const wowrealmstatus = await wowrealmStatus(3725)
+
+      if(wowServerStatus == ""){
+        wowServerStatus = wowrealmstatus.data.status.name
+        console.log("Wow Status init")
+        return
+      }else if(wowServerStatus == wowrealmstatus.data.status.name){
+        return
+      }else{
+        wowServerStatus = wowrealmstatus.data.status.name
+        const channel = client.channels.cache.get(process.env.BLIZZ_CHN);
+        await channel.send(wowrealmstatus.data.realms[0].name + ' is ' + wowrealmstatus.data.status.name)
+      }
+
+    } catch (error) {
+      console.warn('Cannot get WoW Server info, trying again in 1 minute');
+      console.warn(error);
+    }
+  });
+};
+
 
 module.exports = {
   runScheduler,
