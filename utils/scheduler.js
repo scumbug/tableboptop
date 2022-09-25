@@ -18,10 +18,12 @@ const {
 } = require('./helpers');
 const all = require('it-all');
 const { Client } = require('discord.js');
+const { wowRealmStatus } = require('./blizzUtils');
 
 const runScheduler = (client) => {
   serverMonitor(client);
   merchantMonitor(client);
+  wowServerMonitor(client);
 };
 
 /**
@@ -169,6 +171,36 @@ const merchantMonitor = async (discordClient) => {
     console.log('Bot started within spawn cycle, manually invoking job');
     initMerchantJob.invoke();
   }
+};
+
+/**
+ * Cronjob to Monitor WoW Server Status
+ * @param {Client} client
+ */
+const wowServerMonitor = (client) => {
+  //Initialise global variable for wow server status
+  let wowServerStatus = '';
+
+  schedule.scheduleJob('*/1 * * * *', async () => {
+    try {
+      const wowApiRes = await wowRealmStatus(process.env.FROSTMOURNE);
+
+      if (wowServerStatus === '') {
+        wowServerStatus = wowApiRes.data.status.name;
+        console.log('Wow Status init');
+        return;
+      } else if (wowServerStatus === wowApiRes.data.status.name) {
+        return;
+      } else {
+        wowServerStatus = wowApiRes.data.status.name;
+        const channel = client.channels.cache.get(process.env.BLIZZ_CHN);
+        await channel.send(wowApiRes.data.realms[0].name + ' is ' + wowApiRes.data.status.name);
+      }
+    } catch (error) {
+      console.warn('Cannot get WoW Server info, trying again in 1 minute');
+      console.warn(error);
+    }
+  });
 };
 
 module.exports = {
