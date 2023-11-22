@@ -22,7 +22,7 @@ const { wowRealmStatus } = require('./blizzUtils');
 
 const runScheduler = (client) => {
   serverMonitor(client);
-  merchantMonitor(client);
+  // merchantMonitor(client);
   wowServerMonitor(client);
 };
 
