@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { docker } = require('../../utils/dockerUtils');
 
 const SERVER_UP_NOTIFICATION =
-  'seconds to LoadMap(/Game/FactoryGame/Map/GameLevel01/Persistent_Level)';
+  'Bringing up level for play took:';
 
 module.exports = {
   data: new SlashCommandBuilder()
