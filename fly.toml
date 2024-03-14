@@ -23,7 +23,7 @@ KAYSARR_ROLE = "<@&971256274559844442>"
 MOKAMOKA_ROLE = "<@&971256140124020786>"
 SIAN_ROLE = "<@&955106985047638016>"
 
-LA_SERVER = "Valtan"
+LA_SERVER = "Brelshaza"
 FACTORYCONTAINER = "satisfactory"
 VAMPIRECONTAINER = "1a8cb7c7f08c"
 SAVEDIR = "/serverdata/serverfiles/.config/Epic/FactoryGame/Saved/SaveGames"
