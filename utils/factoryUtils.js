@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 const postFactoryAPI = async (method, data) => {
-  const endpoint = 'https://factmon.imcs.fyi/api/v1';
+  const endpoint = process.env.FACTORY_API;
   const payload = {
     function: method,
     data: data,
@@ -12,8 +12,7 @@ const postFactoryAPI = async (method, data) => {
     body: JSON.stringify(payload),
     headers: {
       'Content-Type': 'application/json',
-      Authorization:
-        'Bearer ewoJInBsIjogIkFQSVRva2VuIgp9.F7E3BA3AF95626629ABA89D8670B06411645FF465FF5045152D47868C5F8CD80A98C2F41457ECE9FF31C6086FD8C44D81537B504295D9C93443A48E25BFBDB30',
+      Authorization: process.env.FACTORY_SECRET,
     },
   });
 
