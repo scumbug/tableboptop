@@ -188,6 +188,7 @@ const wowServerMonitor = (client) => {
       if (wowServerStatus === '') {
         wowServerStatus = wowApiRes.data.status.name;
         console.log('Wow Status init');
+        await client.user.setActivity();
         return;
       } else if (wowServerStatus === wowApiRes.data.status.name) {
         return;
@@ -195,7 +196,6 @@ const wowServerMonitor = (client) => {
         wowServerStatus = wowApiRes.data.status.name;
         const channel = client.channels.cache.get(process.env.BLIZZ_CHN);
         await channel.send(wowApiRes.data.realms[0].name + ' is ' + wowApiRes.data.status.name);
-        await client.user.setActivity();
       }
     } catch (error) {
       console.warn('Cannot get WoW Server info, trying again in 1 minute');
