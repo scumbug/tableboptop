@@ -21,7 +21,7 @@ const { Client } = require('discord.js');
 const { wowRealmStatus } = require('./blizzUtils');
 
 const runScheduler = (client) => {
-  serverMonitor(client);
+  // serverMonitor(client);
   // merchantMonitor(client);
   wowServerMonitor(client);
 };
@@ -195,6 +195,7 @@ const wowServerMonitor = (client) => {
         wowServerStatus = wowApiRes.data.status.name;
         const channel = client.channels.cache.get(process.env.BLIZZ_CHN);
         await channel.send(wowApiRes.data.realms[0].name + ' is ' + wowApiRes.data.status.name);
+        await client.user.setActivity();
       }
     } catch (error) {
       console.warn('Cannot get WoW Server info, trying again in 1 minute');
