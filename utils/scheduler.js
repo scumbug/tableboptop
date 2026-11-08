@@ -18,12 +18,13 @@ const {
 } = require('./helpers');
 const all = require('it-all');
 const { Client } = require('discord.js');
-const { wowRealmStatus } = require('./blizzUtils');
+const { wowRealmStatus, wowForeverStatus } = require('./blizzUtils');
 
 const runScheduler = (client) => {
   // serverMonitor(client);
   // merchantMonitor(client);
   wowServerMonitor(client);
+  wowForeverServerMonitor(client);
 };
 
 /**
@@ -200,6 +201,40 @@ const wowServerMonitor = (client) => {
     } catch (error) {
       console.warn('Cannot get WoW Server info, trying again in 1 minute');
       console.warn(error);
+    }
+  });
+};
+
+/**
+ * Monitor WoW Forever Americas & Oceania PvE status once per minute.
+ * @param {Client} client
+ */
+const wowForeverServerMonitor = (client) => {
+  let previousStatus;
+  let checking = false;
+
+  schedule.scheduleJob('*/1 * * * *', async () => {
+    if (checking) return;
+    checking = true;
+
+    try {
+      const { data } = await wowForeverStatus();
+      const status = data.status && data.status.type;
+      if (data.id !== 2 || typeof status !== 'string' || status.length === 0) {
+        throw new Error('Invalid WoW Forever PvE status response');
+      }
+
+      if (previousStatus !== undefined && previousStatus !== status) {
+        const channel = client.channels.cache.get(process.env.BLIZZ_CHN);
+        await channel.send(`WoW Forever (Americas & Oceania, PvE) is ${status}`);
+      }
+      // Save only after delivery succeeds so failed notifications are retried.
+      previousStatus = status;
+    } catch (error) {
+      console.warn('Cannot get WoW Forever PvE status, trying again in 1 minute');
+      console.warn(error);
+    } finally {
+      checking = false;
     }
   });
 };
