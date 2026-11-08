@@ -49,6 +49,27 @@ docker run \
 | ------------ | ------------ |
 | TOKEN  | Your discord bot token  |
 | CLIENTID  | Your discord application ID  |
+| BLIZZ_CLIENT_ID | Blizzard API client ID (used by retail and Forever monitoring) |
+| BLIZZ_CLIENT_SECRET | Blizzard API client secret |
+| BLIZZ_CHN | Discord channel ID for retail and Forever status alerts |
+| FROSTMOURNE | Retail connected-realm ID to monitor (Frostmourne is `3725`) |
 | FACTORYCONTAINER | Container ID of your Satisfactory server |
 | SAVEDIR | Save directory on your satisfactory server (default should be /serverdata/serverfiles/.config/Epic/FactoryGame/Saved/SaveGames) |
+
+## WoW monitoring
+
+The bot checks retail and WoW Forever status every minute. The first successful check
+establishes a baseline; subsequent status changes send a message to `BLIZZ_CHN`.
+
+Forever monitoring covers **Americas & Oceania, PvE only**. It calls Blizzard's
+`GET https://us.api.blizzard.com/data/wow/ruleset/2` with namespace
+`dynamic-forever-us` and locale `en_US`. Forever uses rulesets instead of connected
+realms; PvE (Normal) is ruleset `2`. No additional environment variables are needed beyond
+the existing Blizzard credentials and channel. A notification looks like
+`WoW Forever (Americas & Oceania, PvE) is DOWN`.
+
+Both monitors use Blizzard API OAuth credentials. Allow outbound HTTPS access to
+`us.battle.net` (OAuth) and `us.api.blizzard.com` (game data).
+
+Run the offline monitoring tests with `npm test`.
 
